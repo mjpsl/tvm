@@ -127,7 +127,7 @@ def unpack_lib(name, libs) {
 
 stage('Build') {
   parallel 'BUILD: GPU': {
-    node('GPUBUILD G4') {
+    node('GPUBUILD && G4') {
       ws('workspace/tvm/build-gpu') {
         init_git()
         sh """
@@ -228,7 +228,7 @@ stage('Build') {
 
 stage('Unit Test') {
   parallel 'python3: GPU': {
-    node('GPU G4') {
+    node('GPU && G4') {
       ws('workspace/tvm/ut-python-gpu') {
         init_git()
         unpack_lib('gpu', tvm_multilib)
@@ -267,7 +267,7 @@ stage('Unit Test') {
 
 stage('Integration Test') {
   parallel 'topi: GPU': {
-    node('GPU G4') {
+    node('GPU && G4') {
       ws('workspace/tvm/topi-python-gpu') {
         init_git()
         unpack_lib('gpu', tvm_multilib)
