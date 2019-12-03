@@ -1381,6 +1381,7 @@ _identity_list = []
 # for 1 to N mapping(composed), use custom callable functions
 # for N to 1 mapping, currently not supported(?)
 _convert_map = {
+    'IsFinite'                          : AttrCvt('isfinite'),
     'Abs'                               : AttrCvt('abs'),
     'Add'                               : _elemwise('add'),
     'AddN'                              : _add_n(),

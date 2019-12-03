@@ -39,17 +39,10 @@ def test_zeros_ones():
         np.testing.assert_allclose(intrp_res, ref((124, 50), 'float64'))
 
 def test_unary_identity():
-    for op, ref in [(relay.zeros_like, np.zeros_like),
-               (relay.ones_like, np.ones_like),
-               (relay.ceil, np.ceil),
-               (relay.floor, np.floor),
-               (relay.trunc, np.trunc),
-               (relay.round, np.round),
-               (relay.abs, np.abs),
-               (relay.copy, None), # np.copy
-               (relay.negative, np.negative),
-               (relay.sign, np.sign)]:
-        shape = (8, 9, 4)
+    for op, ref in [
+        (relay.abs, np.abs),
+        (relay.isfinite, np.isfinite)]:
+        shape = (2, 2, 2)
         x = relay.var("x", relay.TensorType(shape, "float32"))
         y = op(x)
         yy = run_infer_type(y)
@@ -57,9 +50,18 @@ def test_unary_identity():
 
         if ref is not None:
             data = np.random.rand(*shape).astype('float32')
+            data[1][1][1]=-1*data[1][1][1]
+            #data[1][1][0] = relay. float32("nan")
+            if op == relay.abs:
+                print("ABS input")
+                print(data)
             intrp = create_executor()
+            #if op != relay.isfinite:
             op_res = intrp.evaluate(y, { x: relay.const(data) })
             ref_res = ref(data)
+            if ref == np.isfinite:
+                print("Isnan response")
+                print(ref_res)
             np.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=0.01)
 
 def test_cast():
@@ -688,32 +690,6 @@ def test_gather_nd():
     verify_gather_nd((3, 2), (2, 2, 3), [[[0, 1, 2], [2, 0, 1]], [[0, 0, 0], [1, 1, 1]]])
 
 if __name__ == "__main__":
-    test_arange()
-    test_cast()
-    test_zeros_ones()
+
     test_unary_identity()
-    test_clip()
-    test_transpose_infer_type()
-    test_transpose()
-    test_reshape_infer_type()
-    test_reshape()
-    test_reshape_like_infer_type()
-    test_reshape_like()
-    test_take_infer_type()
-    test_take()
-    test_full_infer_type()
-    test_full()
-    test_full_like_infer_type()
-    test_full_like()
-    test_infer_type_leaky_relu()
-    test_infer_type_prelu()
-    test_squeeze()
-    test_squeeze_infer_type()
-    test_squeeze_bad_axes_infer_type()
-    test_split_infer_type()
-    test_arange()
-    test_reverse()
-    test_stack()
-    test_tile()
-    test_repeat()
-    test_gather_nd()
+

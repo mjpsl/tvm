@@ -381,6 +381,7 @@ Expr operator<<(Expr a, Expr b) {
   return ir::Call::make(a.type(), ir::Call::shift_left, { a, b }, ir::Call::PureIntrinsic);
 }
 
+
 Expr operator&(Expr a, Expr b) {
   BinaryOpMatchTypes(a, b);
   TVM_INDEX_CONST_PROPAGATION({
@@ -420,19 +421,26 @@ Expr pow(Expr x, Expr y) {
 }
 
 Expr abs(Expr x) {
+    std::cout<<"In abs"<<std::endl;
   if (x.type().is_int()) {
+      std::cout<<"In abs is int"<<std::endl;
     using ir::IntImm;
     const IntImm* px = x.as<IntImm>();
     if (px) {
+        std::cout<<"In abs is int px"<<std::endl;
       return ir::IntImm::make(x.type(), std::abs(px->value));
     }
+        std::cout<<"In abs makezero"<<std::endl;
     return ir::Select::make(x >= make_zero(x.type()), x, -x);
   } else if (x.type().is_float()) {
+      std::cout<<"In abs is Float"<<std::endl;
     using ir::FloatImm;
     const FloatImm* fx = x.as<FloatImm>();
     if (fx) {
+        std::cout<<"In abs is Float fx"<<std::endl;
       return ir::FloatImm::make(x.type(), std::fabs(fx->value));
     }
+    std::cout<<"In abs fabs"<<std::endl;
     return ir::Call::make(x.type(), "fabs", {x}, ir::Call::PureIntrinsic);
   } else if (x.type().is_uint()) {
     return x;
@@ -466,6 +474,48 @@ Expr isnan(Expr x) {
     return x;
   }
 }
+
+
+Expr isfinite(Expr x){
+  Type t = Bool(x.type().lanes());
+  const ir::StringImm *expValue = x.as<ir::StringImm>();
+  //std::cout<<"Is Finite Expr x="<< expValue->value <<std::endl;
+  //LOG(WARNING) << "Data type " << expValue->value;
+  std::cout<<"Isfinite start"<<std::endl;
+  auto xtype= x.type();
+  std::cout<<"Isfinite xtype "<<xtype<<std::endl;
+  
+  if (x.type().is_int() || x.type().is_uint() ||x.type().is_bool()) {
+      //const IntImm* fx = x.as<IntImm>();
+      //std::cout<<"Int  value fx "<< fx->value <<std::endl;
+     // if (fx) {
+     //   std::cout<<"isFinite In In "<<std::endl;
+      //  return make_const(t, std::isfinite(fx->value));
+      //}
+      
+      std::cout<<"isFinite 1 "<<std::endl;
+      return ir::Call::make(x.type(),  "isfinite", {x}, ir::Call::PureIntrinsic);//ir::Call::PureIntrinsic);
+    return make_const(t, true);
+  } else if (x.type().is_float()) {
+
+      using ir::FloatImm;
+      std::cout<<"isFinite 3 Float"<< std::endl;
+      //const FloatImm* fx = x.as<FloatImm>();
+      //std::cout<<"isFinite 3 value fx "<< fx->value <<std::endl;
+      //if (fx) {
+      //  std::cout<<"isFinite 4 "<<std::endl;
+      //  return make_const(t, std::isfinite(fx->value));
+      //}
+      std::cout<<"isFinite 6 "<<x.type()<<std::endl;
+      return ir::Call::make(t,  "isfinite", {x}, ir::Call::PureIntrinsic);//ir::Call::PureIntrinsic);
+    } else {
+      std::cout<<"isFinite 7 "<<std::endl;
+    LOG(FATAL) << "Data type " << x.type()
+               <<" not supported for isfinite op. Skipping isfinite op...";
+    return x;
+  }
+}
+
 
 Expr sum(Expr source, Array<IterVar> rdom) {
   Var x("x", source.type()), y("y", source.type());

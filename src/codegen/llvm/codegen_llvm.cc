@@ -754,7 +754,8 @@ llvm::Value* CodeGenLLVM::CreateIntrinsic(const Call* op) {
     // TODO(hgt312): set fast math flag
     llvm::Value* a = MakeValue(op->args[0]);
     return builder_->CreateFCmpUNO(a, a);
-  } else if (op->is_intrinsic("vectorlow")) {
+  } 
+  else if (op->is_intrinsic("vectorlow")) {
     llvm::Value *v = MakeValue(op->args[0]);
     int l = v->getType()->getVectorNumElements();
     return CreateVecSlice(v, 0, l/2);

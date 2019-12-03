@@ -240,7 +240,6 @@ RELAY_REGISTER_UNARY_OP("abs")
 .set_support_level(3)
 .set_attr<FTVMCompute>("FTVMCompute", RELAY_UNARY_COMPUTE(topi::abs));
 
-
 RELAY_REGISTER_UNARY_OP("tanh")
 .describe(R"code(Returns the tanh of input array, computed element-wise.
 
@@ -374,6 +373,18 @@ RELAY_REGISTER_OP("contrib.ndarray_size")
 ElemwiseArbitraryLayout)
 .set_support_level(10)
 .set_attr<FTVMCompute>("FTVMCompute", NdarraySizeCompute);
+
+
+RELAY_REGISTER_UNARY_OP("isfinite")
+.describe(R"code(Returns the finiteness of input array, computed element-wise.
+
+.. math::
+   isfinite(x)
+
+)code" TVM_ADD_FILELINE)
+.set_support_level(1)
+.add_type_rel("Identity", IdentityRel)
+.set_attr<FTVMCompute>("FTVMCompute", RELAY_UNARY_COMPUTE(topi::isfinite));
 
 }  // namespace relay
 }  // namespace tvm

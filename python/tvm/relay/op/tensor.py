@@ -254,6 +254,21 @@ def abs(data):
     """
     return _make.abs(data)
 
+def isfinite(data):
+    """Compute element-wise finiteness of data.
+
+    Parameters
+    ----------
+    data : relay.Expr
+        The input data
+
+    Returns
+    -------
+    result : relay.Expr
+        The computed result.
+    """
+    return _make.isfinite(data)
+
 def sign(data):
     """Compute element-wise absolute of data.
 
