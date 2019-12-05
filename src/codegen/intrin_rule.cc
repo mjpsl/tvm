@@ -74,7 +74,7 @@ TVM_REGISTER_GLOBAL("tvm.intrin.rule.default.sigmoid")
     auto one = make_const(call->args[0].type(), 1);
     *rv = one / (one + exp(-call->args[0]));
   });
-  
+
 TVM_REGISTER_GLOBAL("tvm.intrin.rule.default.isfinite")
 .set_body([](const TVMArgs& args, TVMRetValue* rv){
     Expr e = args[0];

@@ -83,7 +83,7 @@ def test_ewise():
     def test_isnan(
         low,
         high,
-        shape=(20, 3),
+        shape=(2, 3),
         dtype=tvm.float32,
         check_round=False,
         skip_name_check=False,
@@ -102,6 +102,38 @@ def test_ewise():
         if check_round:
             a_np += ((np.abs(np.fmod(a_np, 1)) - 0.5) < 1e-6) * 1e-5
         b_np = np.isnan(a_np)
+        print("Is NAN out")
+        print(b_np)
+
+    def test_isfinite(
+            low,
+            high,
+            shape=(4, 4),
+            dtype=tvm.float32,
+            check_round=False,
+            skip_name_check=False,
+    ):
+        print ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        m = tvm.var("m")
+        l = tvm.var("l")
+        A = tvm.placeholder((m, l), dtype=dtype, name="A")
+
+        B = topi.isfinite(A)
+        assert tuple(B.shape) == tuple(A.shape)
+        if not skip_name_check:
+            assert B.op.body[0].name == "isfinite"
+        a_np = np.random.uniform(low=low, high=high, size=shape).astype(A.dtype) * 10
+        print (a_np)
+        a_np.ravel()[np.random.choice(a_np.size, int(a_np.size * 0.5), replace=False)] = np.infty
+        a_np.ravel()[np.random.choice(a_np.size, int(a_np.size * 0.5), replace=False)] = np.nan
+        # avoid round check too close to boundary
+        print("Input dimention")
+        print(a_np)
+        if check_round:
+            a_np += ((np.abs(np.fmod(a_np, 1)) - 0.5) < 1e-6) * 1e-5
+        b_np = np.isfinite(a_np)
+        print("Output from NP")
+        print(b_np)
 
         def check_device(device):
             ctx = tvm.context(device, 0)
@@ -111,40 +143,45 @@ def test_ewise():
             print("Running on target: %s" % device)
             with tvm.target.create(device):
                 s = topi.generic.schedule_injective(B)
-            foo = tvm.build(s, [A, B], device, name="isnan")
+            foo = tvm.build(s, [A, B], device, name="isfinite")
+            print ("CREATED foo")
             a = tvm.nd.array(a_np, ctx)
             b = tvm.nd.array(np.zeros_like(b_np), ctx)
             foo(a, b)
+            print("TVM Out")
+            pring (b_np)
             tvm.testing.assert_allclose(b.asnumpy(), b_np, rtol=1e-5, atol=1e-5)
 
         check_device('llvm')
-        check_device('cuda')
-        check_device('opencl')
-        check_device('metal')
-        check_device('rocm')
-        check_device('vulkan')
-        check_device('nvptx')
-        check_device('llvm -device=arm-cpu')
-        check_device('opencl -device=mali')
-        check_device('aocl_sw_emu')
+        #check_device('cuda')
+        #check_device('opencl')
+        #check_device('metal')
+        #check_device('rocm')
+        #check_device('vulkan')
+        #check_device('nvptx')
+        #check_device('llvm -device=arm-cpu')
+        #check_device('opencl -device=mali')
+        #check_device('aocl_sw_emu')
 
-    test_apply(topi.floor, "floor", np.floor, -100, 100)
-    test_apply(topi.ceil, "ceil", np.ceil, -100, 100)
-    test_apply(topi.sign, "sign", np.sign, -100, 100, skip_name_check=True)
-    test_apply(topi.trunc, "trunc", np.trunc, -100, 100)
-    test_apply(topi.abs, "fabs", np.abs, -100, 100)
-    test_apply(topi.round, "round", np.round, -100, 100, check_round=True)
-    test_apply(topi.exp, "exp", np.exp, -1, 1)
-    test_apply(topi.tanh, "tanh", np.tanh, -10, 10, shape=(128, 128))
-    test_apply(topi.tanh, "tanh", np.tanh, -10, 10, shape=(128, 128), dtype="float64")
-    test_apply(topi.sigmoid, "sigmoid", lambda x: 1 / (1 + np.exp(-x)), -1, 1)
-    test_apply(topi.log, "log", np.log, 0, 100)
-    test_apply(topi.sqrt, "sqrt", np.sqrt, 0, 100)
-    test_apply(topi.rsqrt, "rsqrt", lambda x: np.ones_like(x) / np.sqrt(x), 0, 100, skip_name_check=True)
-    test_apply(topi.cos, "cos", np.cos, -2.0*np.pi, 2.0*np.pi)
-    test_apply(topi.sin, "sin", np.sin, -2.0*np.pi, 2.0*np.pi)
-    test_apply(topi.erf, "erf", scipy.special.erf, -.1, .1, dtype="float32")
+    #test_apply(topi.floor, "floor", np.floor, -100, 100)
+    #test_apply(topi.ceil, "ceil", np.ceil, -100, 100)
+    #test_apply(topi.sign, "sign", np.sign, -100, 100, skip_name_check=True)
+    #test_apply(topi.trunc, "trunc", np.trunc, -100, 100)
+    #test_apply(topi.abs, "fabs", np.abs, -100, 100)
+    #test_apply(topi.isfinite, "isfinite", np.isfinite, -100, 100)
+    #test_apply(topi.round, "round", np.round, -100, 100, check_round=True)
+    #test_apply(topi.exp, "exp", np.exp, -1, 1)
+    #test_apply(topi.tanh, "tanh", np.tanh, -10, 10, shape=(128, 128))
+    #test_apply(topi.tanh, "tanh", np.tanh, -10, 10, shape=(128, 128), dtype="float64")
+    #test_apply(topi.sigmoid, "sigmoid", lambda x: 1 / (1 + np.exp(-x)), -1, 1)
+    #test_apply(topi.log, "log", np.log, 0, 100)
+    #test_apply(topi.sqrt, "sqrt", np.sqrt, 0, 100)
+    #test_apply(topi.rsqrt, "rsqrt", lambda x: np.ones_like(x) / np.sqrt(x), 0, 100, skip_name_check=True)
+    #test_apply(topi.cos, "cos", np.cos, -2.0*np.pi, 2.0*np.pi)
+    #test_apply(topi.sin, "sin", np.sin, -2.0*np.pi, 2.0*np.pi)
+    #test_apply(topi.erf, "erf", scipy.special.erf, -.1, .1, dtype="float32")
     test_isnan(-100, 100)
+    test_isfinite(-100,100)
 
 
 def test_cast():
@@ -186,6 +223,6 @@ def test_cast():
 
 
 if __name__ == "__main__":
-    test_util()
+#    test_util()
     test_ewise()
-    test_cast()
+ #   test_cast()

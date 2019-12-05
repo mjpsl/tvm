@@ -137,6 +137,8 @@ class DataType {
   TVM_DLL Expr max() const;
   /*! \return the minimum possible value in this format. */
   TVM_DLL Expr min() const;
+  /*! \return the infinity in this format. */
+  TVM_DLL Expr infinity() const;
 
  private:
   DLDataType data_;

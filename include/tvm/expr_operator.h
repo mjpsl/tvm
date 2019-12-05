@@ -510,6 +510,7 @@ TVM_DLL Expr isnan(Expr x);
  * \param x The input expression.
  * \return The result expression.
  */
+
 TVM_DLL Expr isfinite(Expr x);
 
 /*!

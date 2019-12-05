@@ -486,8 +486,7 @@ def isfinite(x):
     y : Expr
         The result.
     """
-    return call_pure_intrin(x.dtype, "isfinite", x)
-    #return _make.isfinite(x)
+    return _make.isfinite(x)
 
 
 def power(x, y):

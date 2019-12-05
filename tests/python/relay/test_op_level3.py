@@ -51,9 +51,9 @@ def test_unary_identity():
         if ref is not None:
             data = np.random.rand(*shape).astype('float32')
             data[1][1][1]=-1*data[1][1][1]
-            #data[1][1][0] = relay. float32("nan")
-            if op == relay.abs:
-                print("ABS input")
+            data[1][1][0] = np.infty
+            if op == relay.isfinite:
+                print("ISFINITE input")
                 print(data)
             intrp = create_executor()
             #if op != relay.isfinite:
