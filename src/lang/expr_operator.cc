@@ -471,13 +471,8 @@ Expr isnan(Expr x) {
 
 
 Expr isfinite(Expr x){
-    std::cout<<"Inside IsFinite "<<std::endl;
-    
     Expr infX = x.type().infinity();
-    Expr t=abs(x) != infX && x==x;
-    
-    std::cout<<"after confirmation "<<t.type()<<std::endl;
-    return t;
+    return abs(x) != infX && x==x;
 }      
   
 

@@ -38,15 +38,14 @@ def test_zeros_ones():
         intrp_res = intrp.evaluate(y).asnumpy()
         np.testing.assert_allclose(intrp_res, ref((124, 50), 'float64'))
 
-def test_unary_identity():
+def test_isfininte():
     for op, ref in [
-        (relay.abs, np.abs),
         (relay.isfinite, np.isfinite)]:
         shape = (2, 2, 2)
         x = relay.var("x", relay.TensorType(shape, "float32"))
         y = op(x)
         yy = run_infer_type(y)
-        assert yy.checked_type == relay.TensorType(shape, "float32")
+        assert yy.checked_type == relay.TensorType(shape, "bool")
 
         if ref is not None:
             data = np.random.rand(*shape).astype('float32')
@@ -57,7 +56,7 @@ def test_unary_identity():
                 print(data)
             intrp = create_executor()
             #if op != relay.isfinite:
-            op_res = intrp.evaluate(y, { x: relay.const(data) })
+            op_res = intrp.evaluate(y, { x: data })
             ref_res = ref(data)
             if ref == np.isfinite:
                 print("Isnan response")
@@ -690,6 +689,6 @@ def test_gather_nd():
     verify_gather_nd((3, 2), (2, 2, 3), [[[0, 1, 2], [2, 0, 1]], [[0, 0, 0], [1, 1, 1]]])
 
 if __name__ == "__main__":
-
-    test_unary_identity()
+    test_isfininte()
+    #test_unary_identity()
 

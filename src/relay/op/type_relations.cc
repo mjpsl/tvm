@@ -40,6 +40,7 @@ TensorType ToTensorType(const Type& t) {
   }
 }
 
+
 bool IdentityRel(const Array<Type>& types,
                  int num_inputs,
                  const Attrs& attrs,
@@ -108,6 +109,17 @@ Type ConcreteBroadcast(const TensorType& t1,
   return TensorTypeNode::make(Array<IndexExpr>(
       oshape.rbegin(), oshape.rend()), output_dtype);
 }
+
+
+bool IdentityCompRel(const Array<Type>& types,
+                 int num_inputs,
+                 const Attrs& attrs,
+                 const TypeReporter& reporter) {
+    reporter->Assign(types[1], ConcreteBroadcast(ToTensorType(types[0]), ToTensorType(types[0]), ::tvm::Bool()));
+  return true;
+}
+
+
 
 bool BroadcastRel(const Array<Type>& types,
                   int num_inputs,

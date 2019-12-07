@@ -383,7 +383,7 @@ RELAY_REGISTER_UNARY_OP("isfinite")
 
 )code" TVM_ADD_FILELINE)
 .set_support_level(1)
-.add_type_rel("Identity", IdentityRel)
+.add_type_rel("IdentityCompRel", IdentityCompRel)
 .set_attr<FTVMCompute>("FTVMCompute", RELAY_UNARY_COMPUTE(topi::isfinite));
 
 }  // namespace relay
