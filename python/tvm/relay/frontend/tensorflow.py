@@ -41,6 +41,7 @@ from .common import infer_shape as _infer_shape
 from .common import infer_channels as _infer_channels
 from .common import infer_value as _infer_value
 from .common import infer_value_simulated as _infer_value_simulated
+from .common import Renamer
 
 __all__ = ['from_tensorflow']
 
@@ -1424,6 +1425,7 @@ _convert_map = {
     'Greater'                           : _broadcast('greater'),
     'GreaterEqual'                      : _broadcast('greater_equal'),
     'Identity'                          : _identity(),
+    'Isfinite'                          : Renamer('isfinite'),
     'LeakyRelu'                         : AttrCvt('leaky_relu'),
     'LeftShift'                         : AttrCvt('left_shift'),
     'Less'                              : _broadcast('less'),
