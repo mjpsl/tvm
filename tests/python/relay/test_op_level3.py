@@ -43,15 +43,15 @@ def test_zeros_ones():
 
 def test_unary_identity():
     for op, ref in [(relay.zeros_like, np.zeros_like),
-                (relay.ones_like, np.ones_like),
-                (relay.ceil, np.ceil),
-                (relay.floor, np.floor),
-                (relay.trunc, np.trunc),
-                (relay.round, np.round),
-                (relay.abs, np.abs),
-                (relay.copy, None),  # np.copy
-                (relay.negative, np.negative),
-                (relay.sign, np.sign)]:
+               (relay.ones_like, np.ones_like),
+               (relay.ceil, np.ceil),
+               (relay.floor, np.floor),
+               (relay.trunc, np.trunc),
+               (relay.round, np.round),
+               (relay.abs, np.abs),
+               (relay.copy, None),  # np.copy
+               (relay.negative, np.negative),
+               (relay.sign, np.sign)]:
         shape = (8, 9, 4)
         x = relay.var("x", relay.TensorType(shape, "float32"))
         y = op(x)
