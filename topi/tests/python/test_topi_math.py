@@ -102,8 +102,6 @@ def test_ewise():
         if check_round:
             a_np += ((np.abs(np.fmod(a_np, 1)) - 0.5) < 1e-6) * 1e-5
         b_np = np.isnan(a_np)
-        print("Is NAN out")
-        print(b_np)
 
     def test_isfinite(
             low,
@@ -113,7 +111,7 @@ def test_ewise():
             check_round=False,
             skip_name_check=False,
     ):
-        print ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+
         m = tvm.var("m")
         l = tvm.var("l")
         A = tvm.placeholder((m, l), dtype=dtype, name="A")
