@@ -608,7 +608,6 @@ TVM_DECLARE_INTRIN_UNARY(popcount);
 TVM_DECLARE_INTRIN_UNARY(cos);
 TVM_DECLARE_INTRIN_UNARY(sin);
 TVM_DECLARE_INTRIN_UNARY(atan);
-//TVM_DECLARE_INTRIN_UNARY(isfinite);
 
 // Implementation details after this
 inline bool is_const(const Expr& x) {
