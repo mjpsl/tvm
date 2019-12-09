@@ -40,7 +40,6 @@ TensorType ToTensorType(const Type& t) {
   }
 }
 
-
 bool IdentityRel(const Array<Type>& types,
                  int num_inputs,
                  const Attrs& attrs,
