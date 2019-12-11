@@ -1424,7 +1424,7 @@ _convert_map = {
     'Greater'                           : _broadcast('greater'),
     'GreaterEqual'                      : _broadcast('greater_equal'),
     'Identity'                          : _identity(),
-    'IsFinite'                          : Renamer('isfinite'),
+    'IsFinite'                          : AttrCvt('isfinite'),
     'LeakyRelu'                         : AttrCvt('leaky_relu'),
     'LeftShift'                         : AttrCvt('left_shift'),
     'Less'                              : _broadcast('less'),
