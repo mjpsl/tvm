@@ -23,13 +23,11 @@ from tvm import relay
 from tvm.relay import create_executor, transform
 from tvm.relay.testing import ctx_list, check_grad
 
-
 def run_infer_type(expr):
     mod = relay.Module.from_expr(expr)
     mod = transform.InferType()(mod)
     entry = mod["main"]
     return entry if isinstance(expr, relay.Function) else entry.body
-
 
 def test_zeros_ones():
     for op, ref in [(relay.zeros, np.zeros), (relay.ones, np.ones)]:
@@ -40,7 +38,6 @@ def test_zeros_ones():
         intrp_res = intrp.evaluate(y).asnumpy()
         np.testing.assert_allclose(intrp_res, ref((124, 50), 'float64'))
 
-
 def test_unary_identity():
     for op, ref in [(relay.zeros_like, np.zeros_like),
                (relay.ones_like, np.ones_like),
@@ -49,7 +46,7 @@ def test_unary_identity():
                (relay.trunc, np.trunc),
                (relay.round, np.round),
                (relay.abs, np.abs),
-               (relay.copy, None),  # np.copy
+               (relay.copy, None), # np.copy
                (relay.negative, np.negative),
                (relay.sign, np.sign)]:
         shape = (8, 9, 4)
@@ -61,10 +58,9 @@ def test_unary_identity():
         if ref is not None:
             data = np.random.rand(*shape).astype('float32')
             intrp = create_executor()
-            op_res = intrp.evaluate(y, {x: relay.const(data)})
+            op_res = intrp.evaluate(y, { x: relay.const(data) })
             ref_res = ref(data)
             np.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=0.01)
-
 
 def test_cast():
     x = relay.var("x", relay.TensorType((8, 9, 4), "float32"))
@@ -88,7 +84,7 @@ def test_clip():
 
     data = np.random.rand(10, 4).astype('float32')
     intrp = create_executor()
-    op_res = intrp.evaluate(y, {a: relay.const(data)})
+    op_res = intrp.evaluate(y, { a: relay.const(data) })
     ref_res = np.clip(data, 1., 4.)
     np.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=0.01)
 
@@ -142,7 +138,6 @@ def test_approximate_transcendental():
 
     def reference_sigmoid(x):
         return np.exp(-np.logaddexp(0, -x))
-
     np.testing.assert_allclose(op_res.asnumpy(), reference_sigmoid(data), atol=2e-5, rtol=1e-9)
 
     y = approximate_tanh(a)
@@ -154,7 +149,6 @@ def test_approximate_transcendental():
 
     def reference_tanh(x):
         return np.tanh(x)
-
     np.testing.assert_allclose(op_res.asnumpy(), reference_tanh(data), atol=4e-5, rtol=1e-9)
 
 
@@ -167,7 +161,7 @@ def test_squeeze():
 
         data = np.random.random_sample(shape).astype(dtype)
         intrp = create_executor()
-        op_res = intrp.evaluate(squeeze, {x: relay.const(data)})
+        op_res = intrp.evaluate(squeeze, { x : relay.const(data) })
         ref_res = np.squeeze(data, axis=np_axis)
         np.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=0.01)
 
@@ -206,7 +200,6 @@ def test_transpose():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(x_data)
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_transpose((2, 3, 4), (0, 2, 1))
 
 
@@ -227,7 +220,6 @@ def test_squeeze_infer_type():
     assert yy.checked_type == relay.TensorType(
         (4,), "float32")
 
-
 @pytest.mark.xfail(raises=tvm._ffi.base.TVMError)
 def test_squeeze_bad_axes_infer_type():
     n, t, d = 1, 4, 1
@@ -244,7 +236,6 @@ def test_reshape_infer_type():
     yy = run_infer_type(y)
     assert yy.checked_type == relay.TensorType(
         (n, t, 2000), "float32")
-
 
 def test_reshape():
     def verify_reshape(shape, newshape, oshape):
@@ -263,7 +254,6 @@ def test_reshape():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(x_data)
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_reshape((2, 3, 4), (8, 3), (8, 3))
     verify_reshape((4, 7), (2, 7, 2), (2, 7, 2))
     verify_reshape((2, 3, 4), (4, 0, 2), (4, 3, 2))
@@ -283,7 +273,7 @@ def test_reshape():
 def test_reshape_like_infer_type():
     # concrete shape
     x = relay.var("x", relay.TensorType((1, 2, 3), "float32"))
-    y = relay.var("y", relay.TensorType((1, 6), "float32"))
+    y = relay.var("y", relay.TensorType((1,6), "float32"))
     z = relay.reshape_like(x, y)
     zz = run_infer_type(z)
     assert zz.checked_type == relay.TensorType((1, 6), "float32")
@@ -320,7 +310,6 @@ def test_reshape_like():
     verify_reshape_like((2, 3, 4), (1, 8, 3))
     verify_reshape_like((4, 7), (2, 7, 2))
 
-
 def test_take_infer_type():
     def verify_take(dshape, indices_shape, oshape, axis=None):
         x = relay.var("x", relay.TensorType(dshape, "float32"))
@@ -337,7 +326,6 @@ def test_take_infer_type():
     verify_take((d1, d2), (d3, d4, d5), (d3, d4, d5, d2), 0)
     verify_take((d1, d2), (d3, d4, d5), (d1, d3, d4, d5), 1)
     verify_take((d1, d2, d3, d4), (d5, d6), (d1, d2, d5, d6, d4), -2)
-
 
 def test_take():
     def verify_take(src_shape, indices_src, axis=None, mode="clip"):
@@ -360,22 +348,22 @@ def test_take():
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
 
     verify_take((4,), [1])
-    verify_take((4,), [[0, 1, 2, 3]])
-    verify_take((3, 3, 3), [[11, 25]])
-    verify_take((4,), [[0, 1], [2, 3]])
+    verify_take((4,), [[0,1,2,3]])
+    verify_take((3,3,3), [[11,25]])
+    verify_take((4,), [[0,1],[2,3]])
     verify_take((4,), [1], 0)
-    verify_take((2, 2), [[[1, 0], [0, 1]]], 0)
-    verify_take((2, 2), [[[1, 0], [0, 1]]], 1)
-    verify_take((4, 3, 5, 6), [[2, 1, 0, 0]], -2)
-    verify_take((3, 4), [-5, 20])
-    verify_take((3, 4), [-5, 20], mode="wrap")
-    verify_take((3, 4), [-1, 2], axis=0)
-    verify_take((3, 4), [-1, 2], axis=0, mode="wrap")
-    verify_take((3, 4), [-1, 2], axis=1)
-    verify_take((3, 4), [-1, 2], axis=1, mode="wrap")
-    verify_take((3, 3, 3), [[11, 25]], mode="fast")
-    verify_take((3, 4), [0, 2], axis=0, mode="fast")
-    verify_take((3, 4), [0, 2], axis=1, mode="fast")
+    verify_take((2,2), [[[1,0],[0,1]]], 0)
+    verify_take((2,2), [[[1,0],[0,1]]], 1)
+    verify_take((4,3,5,6), [[2,1,0,0]], -2)
+    verify_take((3,4), [-5, 20])
+    verify_take((3,4), [-5, 20], mode="wrap")
+    verify_take((3,4), [-1, 2], axis=0)
+    verify_take((3,4), [-1, 2], axis=0, mode="wrap")
+    verify_take((3,4), [-1, 2], axis=1)
+    verify_take((3,4), [-1, 2], axis=1, mode="wrap")
+    verify_take((3,3,3), [[11,25]], mode="fast")
+    verify_take((3,4), [0, 2], axis=0, mode="fast")
+    verify_take((3,4), [0, 2], axis=1, mode="fast")
 
 
 def test_split_infer_type():
@@ -396,7 +384,7 @@ def test_split_infer_type():
                      relay.ty.TensorType((5, 1, 2, 2), "float32"),
                      relay.ty.TensorType((5, 1, 2, 2), "float32"),
                      relay.ty.TensorType((5, 1, 2, 2), "float32")])),
-                 axis=1)
+                  axis=1)
     verify_split((5, 5, 2, 2), 5,
                  relay.ty.TupleType(tvm.convert([
                      relay.ty.TensorType((1, 5, 2, 2), "float32"),
@@ -404,27 +392,26 @@ def test_split_infer_type():
                      relay.ty.TensorType((1, 5, 2, 2), "float32"),
                      relay.ty.TensorType((1, 5, 2, 2), "float32"),
                      relay.ty.TensorType((1, 5, 2, 2), "float32")])),
-                 axis=0)
+                  axis=0)
     verify_split((d1, d2, d3, d4), 4,
                  relay.ty.TupleType(tvm.convert([
                      relay.ty.TensorType((d1, d2, idxd(d3, 4), d4), "float32"),
                      relay.ty.TensorType((d1, d2, idxd(d3, 4), d4), "float32"),
                      relay.ty.TensorType((d1, d2, idxd(d3, 4), d4), "float32"),
                      relay.ty.TensorType((d1, d2, idxd(d3, 4), d4), "float32")])),
-                 axis=2)
+                  axis=2)
     verify_split((d1, d2, d3, d4), 2,
                  relay.ty.TupleType(tvm.convert([
                      relay.ty.TensorType((idxd(d1, 2), d2, d3, d4), "float32"),
                      relay.ty.TensorType((idxd(d1, 2), d2, d3, d4), "float32")])),
-                 axis=0)
+                  axis=0)
     verify_split((d1, d2, d3, d4), (2, 4, 7),
                  relay.ty.TupleType(tvm.convert([
                      relay.ty.TensorType((d1, 2, d3, d4), "float32"),
                      relay.ty.TensorType((d1, 2, d3, d4), "float32"),
                      relay.ty.TensorType((d1, 3, d3, d4), "float32"),
-                     relay.ty.TensorType((d1, (d2 - 7), d3, d4), "float32")])),
-                 axis=1)
-
+                     relay.ty.TensorType((d1, (d2-7), d3, d4), "float32")])),
+                  axis=1)
 
 def test_full_infer_type():
     # default settings: match input dtype
@@ -452,7 +439,6 @@ def test_full():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(np.array(fill_value, dtype))
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_full(4, (1, 3, 4, 4), "int32")
     verify_full(4.0, (1, 4), "float32")
 
@@ -489,13 +475,12 @@ def test_full_like():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(x_data, np.array(fill_value, dtype))
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_full_like((1, 3, 4, 4), 4, "int32")
     verify_full_like((1, 1), 44.0, "float32")
 
 
 def test_infer_type_leaky_relu():
-    n, c, h, w = tvm.var("n"), tvm.var("c"), tvm.var("h"), tvm.var("w")
+    n, c , h, w = tvm.var("n"), tvm.var("c"), tvm.var("h"), tvm.var("w")
     x = relay.var("x", relay.TensorType((n, c, h, w), "float32"))
     y = relay.nn.leaky_relu(x, alpha=0.1)
     "alpha=0.1" in y.astext()
@@ -521,7 +506,6 @@ def test_infer_type_leaky_relu():
         op_res2 = intrp2.evaluate(func)(x_data)
         tvm.testing.assert_allclose(op_res2.asnumpy(), ref_res, rtol=1e-5)
 
-
 def verify_infer_type_prelu(data, alpha, axis, output, dtype="float32"):
     x = relay.var("data", relay.TensorType(data, dtype))
     if alpha:
@@ -546,9 +530,9 @@ def verify_infer_type_prelu(data, alpha, axis, output, dtype="float32"):
     a_data = np.random.uniform(low=-1, high=1, size=alpha).astype(dtype)
 
     if axis == 1:
-        ref_res = (x_data < 0) * (x_data * a_data.reshape(3, 1, 1)) + (x_data >= 0) * x_data
+        ref_res = (x_data < 0) * (x_data * a_data.reshape(3, 1, 1)) + (x_data>=0) * x_data
     else:
-        ref_res = (x_data < 0) * (x_data * a_data.reshape(1, 1, 3)) + (x_data >= 0) * x_data
+        ref_res = (x_data < 0) * (x_data * a_data.reshape(1, 1, 3)) + (x_data>=0) * x_data
 
     for target, ctx in ctx_list():
         intrp1 = relay.create_executor("graph", ctx=ctx, target=target)
@@ -560,7 +544,7 @@ def verify_infer_type_prelu(data, alpha, axis, output, dtype="float32"):
 
 
 def test_infer_type_prelu():
-    n, c, h, w = tvm.var("n"), tvm.var("c"), tvm.var("h"), tvm.var("w")
+    n, c , h, w = tvm.var("n"), tvm.var("c"), tvm.var("h"), tvm.var("w")
     verify_infer_type_prelu((n, c, h, w), (c,), 1, (n, c, h, w))
     verify_infer_type_prelu((n, h, w, c), (c,), 3, (n, h, w, c))
     verify_infer_type_prelu((n, c, h, w), None, 1, (n, c, h, w))
@@ -596,7 +580,6 @@ def test_arange():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)()
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_arange(None, 20, None)
     verify_arange(None, 20, 2)
     verify_arange(1, 20, None)
@@ -608,7 +591,6 @@ def test_arange():
     verify_arange(20, 1, -1)
     # arange doesnt' support floating point right now, see type relation
     # verify_arange(20, 1, -1.5)
-
 
 def test_tile():
     def verify_tile(dshape, reps):
@@ -624,11 +606,9 @@ def test_tile():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(x_data)
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_tile((2, 3, 4), (3, 2, 1))
     verify_tile((2, 3, 4), (1, 2))
     verify_tile((2, 3), (3, 2, 1))
-
 
 def test_repeat():
     def verify_repeat(dshape, repeats, axis):
@@ -641,11 +621,9 @@ def test_repeat():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(data)
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_repeat((3,), 2, 0)
     verify_repeat((3, 10), 2, -1)
     verify_repeat((3, 2, 4), 3, 1)
-
 
 def test_stack():
     def verify_stack(dshapes, axis):
@@ -664,7 +642,6 @@ def test_stack():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(*x_data)
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_stack([(2,), (2,), (2,)], -1)
     verify_stack([(2,), (2,), (2,)], 0)
     verify_stack([(2, 2, 4), (2, 2, 4), (2, 2, 4)], 1)
@@ -685,7 +662,6 @@ def test_reverse():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(x_data)
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_reverse((2, 3, 4), 1)
     verify_reverse((4, 7), 0)
     verify_reverse((2, 3, 4), -1)
@@ -706,12 +682,10 @@ def test_gather_nd():
                 intrp = relay.create_executor(kind, ctx=ctx, target=target)
                 op_res = intrp.evaluate(func)(x_data, y_data)
                 tvm.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=1e-5)
-
     verify_gather_nd((2, 2), (2, 3), [[1, 1, 0], [0, 1, 0]])
     verify_gather_nd((2, 2, 2), (2, 2), [[0, 1], [1, 0]])
     verify_gather_nd((3, 2, 2), (2, 2), [[0, 1], [1, 0]])
     verify_gather_nd((3, 2), (2, 2, 3), [[[0, 1, 2], [2, 0, 1]], [[0, 0, 0], [1, 1, 1]]])
-
 
 def test_isfinite():
     for op, ref in [(relay.isfinite, np.isfinite)]:
@@ -729,10 +703,7 @@ def test_isfinite():
             op_res = intrp.evaluate(y, {x: data})
             ref_res = ref(data)
             np.testing.assert_allclose(op_res.asnumpy(), ref_res, rtol=0.01)
-
-
 if __name__ == "__main__":
-
     test_arange()
     test_cast()
     test_zeros_ones()
@@ -762,5 +733,4 @@ if __name__ == "__main__":
     test_tile()
     test_repeat()
     test_gather_nd()
-    test_unary_identity()
-    test_isfinite()
+	test_isfinite()
