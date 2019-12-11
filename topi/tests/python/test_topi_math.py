@@ -83,7 +83,7 @@ def test_ewise():
     def test_isnan(
         low,
         high,
-        shape=(2, 3),
+        shape=(20, 3),
         dtype=tvm.float32,
         check_round=False,
         skip_name_check=False,
@@ -102,6 +102,30 @@ def test_ewise():
         if check_round:
             a_np += ((np.abs(np.fmod(a_np, 1)) - 0.5) < 1e-6) * 1e-5
         b_np = np.isnan(a_np)
+        def check_device(device):
+            ctx = tvm.context(device, 0)
+            if not ctx.exist:
+                print("Skip because %s is not enabled" % device)
+                return
+            print("Running on target: %s" % device)
+            with tvm.target.create(device):
+                s = topi.generic.schedule_injective(B)
+            foo = tvm.build(s, [A, B], device, name="isnan")
+            a = tvm.nd.array(a_np, ctx)
+            b = tvm.nd.array(np.zeros_like(b_np), ctx)
+            foo(a, b)
+            tvm.testing.assert_allclose(b.asnumpy(), b_np, rtol=1e-5, atol=1e-5)
+
+        check_device('llvm')
+        check_device('cuda')
+        check_device('opencl')
+        check_device('metal')
+        check_device('rocm')
+        check_device('vulkan')
+        check_device('nvptx')
+        check_device('llvm -device=arm-cpu')
+        check_device('opencl -device=mali')
+        check_device('aocl_sw_emu')
 
     def test_isfinite(
             low,
@@ -125,7 +149,6 @@ def test_ewise():
         if check_round:
             a_np += ((np.abs(np.fmod(a_np, 1)) - 0.5) < 1e-6) * 1e-5
         b_np = np.isfinite(a_np)
-
 
         def check_device(device):
             ctx = tvm.context(device, 0)
@@ -210,6 +233,6 @@ def test_cast():
 
 
 if __name__ == "__main__":
-#    test_util()
+    test_util()
     test_ewise()
- #   test_cast()
+    test_cast()
