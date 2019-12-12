@@ -467,6 +467,13 @@ Expr isnan(Expr x) {
   }
 }
 
+
+Expr isfinite(Expr x){
+    Expr infX = x.type().infinity();
+    return abs(x) != infX && x==x;
+}      
+  
+
 Expr sum(Expr source, Array<IterVar> rdom) {
   Var x("x", source.type()), y("y", source.type());
   Expr result = ir::Add::make(x, y);
