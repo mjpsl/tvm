@@ -381,7 +381,6 @@ Expr operator<<(Expr a, Expr b) {
   return ir::Call::make(a.type(), ir::Call::shift_left, { a, b }, ir::Call::PureIntrinsic);
 }
 
-
 Expr operator&(Expr a, Expr b) {
   BinaryOpMatchTypes(a, b);
   TVM_INDEX_CONST_PROPAGATION({
