@@ -60,7 +60,7 @@ Expr DataType::infinity() const {
   LOG(FATAL) << "Cannot decide infinity for type" << *this;
   return Expr();
 }
-    
+
 // maximum and min values
 Expr DataType::max() const {
   using namespace ir;
