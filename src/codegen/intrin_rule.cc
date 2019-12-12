@@ -82,7 +82,7 @@ TVM_REGISTER_GLOBAL("tvm.intrin.rule.default.isfinite")
     CHECK(call != nullptr);
 
     *rv = isfinite(call->args[0]);
-  });  
+  });
 
 }  // namespace intrin
 }  // namespace codegen
