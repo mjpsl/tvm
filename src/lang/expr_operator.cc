@@ -459,7 +459,7 @@ Expr isnan(Expr x) {
                                {cast(Float(32, t.lanes()), std::move(x))},
                                ir::Call::PureIntrinsic);
     } else {
-        return ir::Call::make(t, ir::Call::isnan, {x}, ir::Call::PureIntrinsic);
+      return ir::Call::make(t, ir::Call::isnan, {x}, ir::Call::PureIntrinsic);
     }
   } else {
     LOG(FATAL) << "Data type " << x.type()
