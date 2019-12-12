@@ -346,16 +346,14 @@ Expr operator||(Expr a, Expr b) {
   CHECK(a.type().is_bool());
   CHECK(b.type().is_bool());
   Expr ret = arith::TryConstFold<ir::Or>(a, b);
-  if (ret.defined()) 
-      return ret;
+  if (ret.defined()) return ret;
   return ir::Or::make(a, b);
 }
 
 Expr operator!(Expr a) {
   CHECK(a.type().is_bool());
   Expr ret = arith::TryConstFold<ir::Not>(a);
-  if (ret.defined()) 
-      return ret;
+  if (ret.defined()) return ret;
   return ir::Not::make(a);
 }
 
