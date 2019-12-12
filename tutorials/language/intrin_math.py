@@ -148,7 +148,6 @@ s[B].bind(tx, tvm.thread_axis("threadIdx.x"))
 fcuda = tvm.build(s, [A, B], "cuda", name="mylog")
 print(fcuda.imported_modules[0].get_source())
 
-
 ######################################################################
 # Summary
 # -------
