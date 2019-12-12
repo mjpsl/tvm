@@ -41,7 +41,6 @@ from .common import infer_shape as _infer_shape
 from .common import infer_channels as _infer_channels
 from .common import infer_value as _infer_value
 from .common import infer_value_simulated as _infer_value_simulated
-from .common import Renamer
 
 __all__ = ['from_tensorflow']
 
