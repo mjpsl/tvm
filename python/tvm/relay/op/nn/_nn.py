@@ -960,6 +960,7 @@ def _find_conv2d_op(op):
 @reg.register_compute("nn.dilation2d")
 def compute_dilation2d(attrs, inputs, target):
     """Compute definition of dilation2d"""
+    print('python/tvm/relay/op/nn/_nn.py will call topi.nn.dilation2d')
     padding = get_const_tuple(attrs.padding)
     strides = get_const_tuple(attrs.strides)
     rate = get_const_tuple(attrs.rate)

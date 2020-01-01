@@ -390,8 +390,8 @@ def test_dilation2d_infer_type():
     w = relay.var("w")
     y = relay.nn.dilation2d(x, w,
                         kernel_size=(3, 3),
-                        stride=[1,1,1,1],
-                        rates=[1,1,1,1],
+                        strides=[1,1,1,1],
+                        rate=[1,1,1,1],
                         padding='VALID')
     yy = run_infer_type(y)
     assert yy.checked_type ==  relay.TensorType(
@@ -400,7 +400,8 @@ def test_dilation2d_infer_type():
 
 def test_dilation2d_run():
     def run_test_dilation2d(dtype, out_dtype, scale, dshape, kshape,
-                            padding='VALID',
+                            strides,
+                            padding=[0, 0],
                             rate=[1, 1, 1, 1],
                             except_targets=None,
                             **attrs):
@@ -410,7 +411,7 @@ def test_dilation2d_run():
         x = relay.var("x", shape=dshape, dtype=dtype)
         w = relay.var("w", dtype=dtype)
         y = relay.nn.dilation2d(x, w,
-                                stride=stride,
+                                strides=strides,
                                 rate=rate,
                                 padding=padding,
                                 **attrs)
@@ -420,7 +421,7 @@ def test_dilation2d_run():
         dkernel = topi.testing.dilate_python(kernel, rate)
 
         ref_res = topi.testing.dilation2d_python(
-            data.astype(out_dtype), dkernel.astype(out_dtype), stride, padding)
+            data.astype(out_dtype), dkernel.astype(out_dtype), strides, padding)
 
         for target, ctx in ctx_list():
             if target in except_targets:
@@ -433,9 +434,9 @@ def test_dilation2d_run():
     dshape = (1, 32, 32, 3)
     kshape = (1, 3, 3, 3)
     run_test_dilation2d("float32", "float32", 1, dshape, kshape,
-                        stride=[1, 1, 1, 1],
+                        strides=[1, 1, 1, 1],
                         rate=[1, 1, 1, 1],
-                        padding='VALID')
+                        padding=[0,0])
     #   dilation rate 2
     dshape = (1, 32, 18, 18)
     kshape = (32, 4, 3, 3)
@@ -924,7 +925,8 @@ def test_bitpack_infer_type():
 
 
 if __name__ == "__main__":
-    test_dilation2d()
+    test_dilation2d_run()
+    # test_dilation2d()
     # test_pool2d()
     # test_avg_pool2d_no_count_pad()
     # test_lrn()
