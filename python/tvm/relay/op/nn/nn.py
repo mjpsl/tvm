@@ -1830,3 +1830,99 @@ def cross_entropy_with_logits(predictions, targets):
       The computed result.
     """
     return _make.cross_entropy_with_logits(predictions, targets)
+
+
+def dilation2d(data,
+           weight,
+           strides=(1, 1),
+           padding=(0, 0),
+           rate=(1, 1),
+           groups=1,
+           channels=None,
+           kernel_size=None,
+           data_layout="NHWC",
+           kernel_layout="HWC",
+           out_layout="",
+           out_dtype=""):
+    r"""2D dilation.
+
+    This operator takes the weight as the dilation kernel
+    and convolves it with data to produce an output.
+
+
+    In the default case, where the data_layout is `NCHW`
+    and kernel_layout is `OIHW`, dilation2d takes in
+    a data Tensor with shape `(batch_size, in_channels, height, width)`,
+    and a weight Tensor with shape `(channels, in_channels, kernel_size[0], kernel_size[1])`
+    to produce an output Tensor with the following rule:
+
+    .. math::
+
+        \mbox{out}[b, c, y, x] = \max_{dy, dx, k}
+           \mbox{data}[b, k, \mbox{strides}[0] * y  + dy, \mbox{strides}[1] * x + dx] +
+           \mbox{weight}[c, k, dy, dx]
+
+    Padding and dilation are applied to data and weight respectively before the computation.
+    This operator accepts data layout specification.
+    Semantically, the operator will convert the layout to the canonical layout
+    (`NCHW` for data and `OIHW` for weight), perform the computation,
+    then convert to the out_layout.
+
+
+    Parameters
+    ----------
+    data : tvm.relay.Expr
+        The input data to the operator.
+
+    weight : tvm.relay.Expr
+        The weight expressions.
+
+    strides : Optional[Tuple[int]]
+        The strides of convolution.
+
+    padding : Optional[Tuple[int]]
+        The padding of convolution on both sides of inputs before convolution.
+
+    rate : Optional[Tuple[int]]
+        Specifies the dilation rate to be used for dilated convolution.
+
+    groups : Optional[int]
+        Number of groups for grouped convolution.
+
+    channels : Optional[int]
+        Number of output channels of this convolution.
+
+    kernel_size : Optional[Tuple[int]]
+        The spatial of the convolution kernel.
+
+    data_layout : Optional[str]
+        Layout of the input.
+
+    kernel_layout : Optional[str]
+        Layout of the weight.
+
+    out_layout : Optional[str]
+        Layout of the output, by default, out_layout is the same as data_layout
+
+    out_dtype : Optional[str]
+        Specifies the output data type for mixed precision conv2d.
+
+    Returns
+    -------
+    result : tvm.relay.Expr
+        The computed result.
+    """
+    print("tvm/python/tvm/relay/op/nn/nn.py calling _make.dilation2d")
+    return _make.dilation2d(data, weight, strides, padding, rate,
+                        channels, kernel_size, data_layout,
+                        kernel_layout, out_layout, out_dtype)
+
+def dilation2dDepthwise(data,
+           weight,
+           strides=(1, 1),
+           rate=(1, 1),
+           padding=(0, 0)
+           ):
+    data_layout = "NHWC"
+    print("tvm/python/tvm/relay/op/nn/nn.py calling _make.dilation2ddepthwiase")
+    return _make.dilation2d(data, weight, strides, rate, padding)

@@ -383,6 +383,170 @@ def _test_global_pool2d(opfunc, reffunc):
         op_res1 = intrp1.evaluate(func)(data)
         tvm.testing.assert_allclose(op_res1.asnumpy(), ref_res, rtol=1e-5, atol=1e-5)
 
+def test_dilation2d_infer_type():
+    # symbolic in batch dimension
+    n, h, w, c = tvm.var("n"), 224, 224,10
+    x = relay.var("x", relay.ty.TensorType((n, h, w,c), "float32"))
+    w = relay.var("w")
+    y = relay.nn.dilation2d(x, w,
+                        kernel_size=(3, 3),
+                        stride=[1,1,1,1],
+                        rates=[1,1,1,1],
+                        padding='VALID')
+    yy = run_infer_type(y)
+    assert yy.checked_type ==  relay.TensorType(
+        (n, 224, 224,10), "float32")
+
+
+def test_dilation2d_run():
+    def run_test_dilation2d(dtype, out_dtype, scale, dshape, kshape,
+                            padding='VALID',
+                            rate=[1, 1, 1, 1],
+                            except_targets=None,
+                            **attrs):
+        if except_targets is None:
+            except_targets = []
+
+        x = relay.var("x", shape=dshape, dtype=dtype)
+        w = relay.var("w", dtype=dtype)
+        y = relay.nn.dilation2d(x, w,
+                                stride=stride,
+                                rate=rate,
+                                padding=padding,
+                                **attrs)
+        func = relay.Function([x, w], y)
+        data = np.random.uniform(-scale, scale, size=dshape).astype(dtype)
+        kernel = np.random.uniform(-scale, scale, size=kshape).astype(dtype)
+        dkernel = topi.testing.dilate_python(kernel, rate)
+
+        ref_res = topi.testing.dilation2d_python(
+            data.astype(out_dtype), dkernel.astype(out_dtype), stride, padding)
+
+        for target, ctx in ctx_list():
+            if target in except_targets:
+                continue
+            intrp1 = relay.create_executor("graph", ctx=ctx, target=target)
+            op_res1 = intrp1.evaluate(func)(data, kernel)
+            tvm.testing.assert_allclose(op_res1.asnumpy(), ref_res, rtol=1e-5, atol=1e-5)
+
+    # dilation2d
+    dshape = (1, 32, 32, 3)
+    kshape = (1, 3, 3, 3)
+    run_test_dilation2d("float32", "float32", 1, dshape, kshape,
+                        stride=[1, 1, 1, 1],
+                        rate=[1, 1, 1, 1],
+                        padding='VALID')
+    #   dilation rate 2
+    dshape = (1, 32, 18, 18)
+    kshape = (32, 4, 3, 3)
+    run_test_dilation2d("float32", "float32", 1, dshape, kshape,
+                        stride=[1, 1, 1, 1],
+                        rate=[1, 2, 2, 1],
+                        padding='VALID',
+                        except_targets=['cuda'])
+
+def test_dilation2d():
+
+    n, h, w, c = tvm.var("n"), 224, 224, 10
+    y = opfunc('nn.dilation2d', pool_size=(1, 1))
+    assert "pool_size=" in y.astext()
+    yy = run_infer_type(y)
+    assert yy.checked_type == relay.TensorType((n, 224, 224, 10), dtype)
+    # test execution
+    dtype = "int32"
+    dshape = (1, 28, 28, 3)
+    x = relay.var("x", shape=dshape, dtype=dtype)
+    y = opfunc(x, pool_size=(2, 2), strides=(2, 2), padding=(0, 0))
+    func = relay.Function([x], y)
+    data = np.random.random_integers(low=-128, high=128, size=dshape)
+    ref_res = reffunc(data.reshape(1, 3, 14, 2, 14, 2), axis=(3, 5)).astype(dtype)
+    for target, ctx in ctx_list():
+        intrp1 = relay.create_executor("graph", ctx=ctx, target=target)
+        op_res1 = intrp1.evaluate(func)(data)
+        tvm.testing.assert_allclose(op_res1.asnumpy(), ref_res, rtol=1e-5, atol=1e-5)
+
+    def _test_dilation2d(input_array_size, kernel_size, dilation_rate):
+        print("Inside _test_dilation2d")
+        np.random.seed(0)
+        data = np.random.randint(0, 10, size=input_array_size)
+        kernel = np.random.randint(0, 4, size=kernel_size)
+
+        # Compute dilation2D channel wise using numpy, channel is 4th dimension of input array
+        ref_res = []
+        for i in range(data.shape[3]):
+            data_channel = data[:, :, :, i:(i + 1)].reshape(data.shape[1], data.shape[2])
+            kernel_channel = kernel[:, :, i:(i + 1)].reshape(kernel.shape[0], kernel.shape[1])
+            calc1 = calculate_morph_dilation(data_channel, kernel_channel, dilation_rate[1:3])
+            ref_res.append(calc1)
+        ref_res = np.asarray(ref_res)
+
+        # Compute dilation2D using TensorFlow
+        #x=relay.nn.dilation2d( data, kernel, [1, 1, 1, 1], 'VALID' dilation_rate )
+        x = relay.nn.dilation2dDepthwise(data, kernel, (1, 1, 1, 1 ), dilation_rate,(0, 0, 0, 0))
+        #                                data, weight, strides=(1, 1),rate=(1, 1),padding='VALID
+        #x = tfnn.dilation2d(data, kernel, [1, 1, 1, 1], dilation_rate, 'VALID')
+
+        # Convert TF output to np compatible format
+        out = []
+        for i in range(data.shape[3]):
+            c = x[:, :, :, i:i + 1].eval(session=sess)
+            c = c.reshape(c.shape[1], c.shape[2])
+            out.append(c)
+        out = np.asarray(out)
+
+        return np.allclose(ref_res, out, rtol=1e-3, atol=1e-3)
+
+
+    print("Inside test_dilation2d")
+    print("Test case 1:", _test_dilation2d((1, 5, 5, 3), (3, 3, 3), [1, 1, 1, 1]))
+    print("Test case 2:", _test_dilation2d((1, 5, 5, 3), (3, 3, 3), [1, 2, 2, 1]))
+    print("Test case 3:", _test_dilation2d((1, 7, 7, 3), (5, 5, 3), [1, 1, 1, 1]))
+
+
+def calculate_morph_dilation(a, k, r):
+    ##  a: input array
+    ##  k: kernel
+    ##  r: dilation_rate
+
+    k_dilated = dilate_python(k, r)  # dilate kernel as required
+    kern_rows = k_dilated.shape[0]
+    kern_cols = k_dilated.shape[1]
+    rows = a.shape[0]
+    columns = a.shape[1]
+
+    out = []
+
+    for i in range(rows - kern_rows + 1):
+        for j in range(columns - kern_cols + 1):
+            s = np.max(a[i:(i + kern_rows), j:(j + kern_cols)] + k_dilated)
+            out.append(s)
+
+    return (np.asarray(out).reshape(rows - kern_rows + 1, columns - kern_cols + 1))
+
+def dilate_python(input_np, dil_rate):
+    """Dilate operation.
+    Parameters
+    ----------
+    input_np : numpy.ndarray
+        n-D, can be any layout.
+    dil_rate : dilation rate
+    Returns
+    -------
+    output_np : numpy.ndarray
+        n-D, the same layout as Input.
+    """
+    n = len(input_np.shape)
+    assert len(dil_rate) == n, \
+        "Input dimension and dil_rate size dismatch : %d vs %d" %(n, len(dil_rate))
+    output_size = ()
+    no_zero = ()
+    for i in range(n):
+        output_size += ((input_np.shape[i]-1)*dil_rate[i]+1,)
+        no_zero += ((range(0, output_size[i], dil_rate[i])),)
+    output_np = np.zeros(shape=output_size)
+    output_np[np.ix_(*no_zero)] = input_np
+
+    return output_np
 
 def test_pool2d():
     _test_pool2d(relay.nn.max_pool2d, np.max)
@@ -760,21 +924,22 @@ def test_bitpack_infer_type():
 
 
 if __name__ == "__main__":
-    test_pool2d()
-    test_avg_pool2d_no_count_pad()
-    test_lrn()
-    test_l2_normalize()
-    test_conv2d_infer_type()
-    test_bitpack_infer_type()
-    test_upsampling_infer_type()
-    test_flatten_infer_type()
-    test_pad_infer_type()
-    test_pad_run()
-    test_conv2d_transpose_infer_type()
-    test_conv2d_transpose_run()
-    test_conv2d_run()
-    test_conv2d_winograd()
-    test_bitserial_conv2d_infer_type()
-    test_batch_flatten()
-    test_upsampling()
-    test_conv2d_int8_intrinsics()
+    test_dilation2d()
+    # test_pool2d()
+    # test_avg_pool2d_no_count_pad()
+    # test_lrn()
+    # test_l2_normalize()
+    # test_conv2d_infer_type()
+    # test_bitpack_infer_type()
+    # test_upsampling_infer_type()
+    # test_flatten_infer_type()
+    # test_pad_infer_type()
+    # test_pad_run()
+    # test_conv2d_transpose_infer_type()
+    # test_conv2d_transpose_run()
+    # test_conv2d_run()
+    # test_conv2d_winograd()
+    # test_bitserial_conv2d_infer_type()
+    # test_batch_flatten()
+    # test_upsampling()
+    # test_conv2d_int8_intrinsics()

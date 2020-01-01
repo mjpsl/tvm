@@ -2697,122 +2697,156 @@ def test_forward_add_n():
     _test_forward_add_n(in3)
     _test_forward_add_n(in4)
     _test_forward_add_n(in5)
+#######################################################################
+#Dilation2d
+def _test_dilation2d(opname, tensor_in_sizes, filter_in_sizes,
+                     strides, rates, padding,
+                     deconv_output_shape=[]):
+    """ One iteration of dilation2d with given shapes and attributes """
+
+    total_size_1 = np.prod(tensor_in_sizes)
+    total_size_2 = np.prod(filter_in_sizes)
+    # Initializes the input tensor with array containing incrementing
+    # numbers from 1.
+    data_array = [f * 1.0 for f in range(1, total_size_1 + 1)]
+    filter_array = [f * 1.0 for f in range(1, total_size_2 + 1)]
+
+    with tf.Graph().as_default():
+        in_data = array_ops.placeholder(shape=tensor_in_sizes, dtype='float32')
+        in_filter = constant_op.constant(
+            filter_array, shape=filter_in_sizes, dtype='float32')
+
+        if opname == 'dil2d':
+            nn_ops.dilation2d(in_data,
+                              in_filter,
+                              strides=strides,
+                              rates=rates,
+                              padding=padding)
+
+            compare_tf_with_tvm(np.reshape(data_array, tensor_in_sizes).astype('float32'),
+                                'Placeholder:0', 'dilation2D:0')
 
 
+def test_forward_dilation():
+    if is_gpu_available():
+        _test_dilation2d('dil2d', [1, 5, 5, 3], [1, 3, 3, 3], [1, 1, 1, 1], [1, 1, 1, 1], "VALID")
+        _test_dilation2d('dil2d', [1, 5, 5, 3], [1, 3, 3, 3], [1, 1, 1, 1], [1, 2, 2, 1], "VALID")
+        _test_dilation2d('dil2d', [1, 5, 5, 3], [1, 3, 3, 3], [1, 1, 1, 1], [1, 1, 1, 1], "SAME")
+        _test_dilation2d('dil2d', [1, 28, 28, 3], [1, 5, 5, 3], [1, 2, 2, 1], [1, 1, 1, 1], "VALID")
 #######################################################################
 # Main
 # ----
 if __name__ == '__main__':
-
+    test_forward_dilation()
     # Transforms
-    test_forward_transpose()
-    test_forward_reshape()
-    test_forward_depthtospace()
-    test_forward_spacetodepth()
-    test_forward_squeeze()
-    test_forward_pack()
-    test_forward_size()
-    test_forward_broadcast_to()
-    test_forward_fill()
-    test_forward_crop()
-    test_forward_resize()
-    test_forward_crop_and_resize()
-    test_forward_pad()
-    test_forward_unpack()
-    test_forward_gather()
-    test_forward_gather_nd()
-    test_forward_stridedslice()
-    test_forward_split()
-    test_forward_unstack()
-    test_forward_tile()
-    test_forward_top_k_v2()
-    test_forward_clip_by_value()
-    test_forward_maximum()
-    test_forward_minimum()
-    test_forward_range()
-    test_forward_right_shift()
-    test_forward_left_shift()
-    test_forward_truncatemod()
-    test_forward_one_hot()
-
-    # Activations
-    test_forward_sigmoid()
-    test_forward_relu()
-    test_forward_leaky_relu()
-    test_forward_elu()
-    test_forward_selu()
-    test_forward_tanh()
-
-    # Tensor
-    test_forward_round()
-    test_forward_reverse_v2()
-    test_forward_pow_exp()
-    test_forward_sign()
-    test_forward_log()
-    test_forward_log1p()
-    test_forward_cos()
-    test_forward_sin()
-    test_forward_negative()
-    test_forward_divide()
-    test_forward_abs()
-    test_forward_isfinite()
-    test_forward_softplus()
-    test_forward_sqrt()
-    test_forward_rsqrt()
-    test_forward_expand_dims()
-    test_forward_square()
-    test_forward_softmax()
-    test_forward_log_softmax()
-    test_forward_bias_add()
-    test_forward_zeros_like()
-    test_forward_erf()
-    test_forward_squared_difference()
-    test_forward_add_n()
-
-    # Reductions
-    test_forward_argminmax()
-    test_forward_reduce()
-    test_forward_mean()
-    test_forward_reduce_prod()
-    test_forward_reduce_all()
-    test_forward_reduce_any()
-    test_forward_reduce_min()
-
-    # General
-    test_forward_multi_input()
-    test_forward_multi_output()
-    test_forward_variable()
-    test_placeholder()
-
-    # NN
-    test_forward_convolution()
-    test_forward_pooling()
-    test_forward_concat_v2()
-    test_forward_lrn()
-    test_forward_l2_normalize()
-    test_forward_space_to_batch_nd()
-    test_forward_batch_to_space_nd()
-
-    # End to End
-    test_forward_inception_v3()
-    test_forward_inception_v1()
-    test_forward_mobilenet()
-    test_forward_resnetv2()
-    test_forward_placeholder()
-    test_forward_ptb()
-
-    # RNN
-    test_forward_lstm()
-
-    # Elementwise
-    test_forward_ceil()
-    test_forward_floor()
-
-    # Relational ops
-    test_forward_rel_ops()
-    test_forward_logical()
-    test_forward_where()
-    test_forward_matmul()
-    test_forward_batch_matmul()
+    # test_forward_transpose()
+    # test_forward_reshape()
+    # test_forward_depthtospace()
+    # test_forward_spacetodepth()
+    # test_forward_squeeze()
+    # test_forward_pack()
+    # test_forward_size()
+    # test_forward_broadcast_to()
+    # test_forward_fill()
+    # test_forward_crop()
+    # test_forward_resize()
+    # test_forward_crop_and_resize()
+    # test_forward_pad()
+    # test_forward_unpack()
+    # test_forward_gather()
+    # test_forward_gather_nd()
+    # test_forward_stridedslice()
+    # test_forward_split()
+    # test_forward_unstack()
+    # test_forward_tile()
+    # test_forward_top_k_v2()
+    # test_forward_clip_by_value()
+    # test_forward_maximum()
+    # test_forward_minimum()
+    # test_forward_range()
+    # test_forward_right_shift()
+    # test_forward_left_shift()
+    # test_forward_truncatemod()
+    # test_forward_one_hot()
+    #
+    # # Activations
+    # test_forward_sigmoid()
+    # test_forward_relu()
+    # test_forward_leaky_relu()
+    # test_forward_elu()
+    # test_forward_selu()
+    # test_forward_tanh()
+    #
+    # # Tensor
+    # test_forward_round()
+    # test_forward_reverse_v2()
+    # test_forward_pow_exp()
+    # test_forward_sign()
+    # test_forward_log()
+    # test_forward_log1p()
+    # test_forward_cos()
+    # test_forward_sin()
+    # test_forward_negative()
+    # test_forward_divide()
+    # test_forward_abs()
+    # test_forward_isfinite()
+    # test_forward_softplus()
+    # test_forward_sqrt()
+    # test_forward_rsqrt()
+    # test_forward_expand_dims()
+    # test_forward_square()
+    # test_forward_softmax()
+    # test_forward_log_softmax()
+    # test_forward_bias_add()
+    # test_forward_zeros_like()
+    # test_forward_erf()
+    # test_forward_squared_difference()
+    # test_forward_add_n()
+    #
+    # # Reductions
+    # test_forward_argminmax()
+    # test_forward_reduce()
+    # test_forward_mean()
+    # test_forward_reduce_prod()
+    # test_forward_reduce_all()
+    # test_forward_reduce_any()
+    # test_forward_reduce_min()
+    #
+    # # General
+    # test_forward_multi_input()
+    # test_forward_multi_output()
+    # test_forward_variable()
+    # test_placeholder()
+    #
+    # # NN
+    # test_forward_convolution()
+    # test_forward_pooling()
+    # test_forward_concat_v2()
+    # test_forward_lrn()
+    # test_forward_l2_normalize()
+    # test_forward_space_to_batch_nd()
+    # test_forward_batch_to_space_nd()
+    #
+    # # End to End
+    # test_forward_inception_v3()
+    # test_forward_inception_v1()
+    # test_forward_mobilenet()
+    # test_forward_resnetv2()
+    # test_forward_placeholder()
+    # test_forward_ptb()
+    #
+    # # RNN
+    # test_forward_lstm()
+    #
+    # # Elementwise
+    # test_forward_ceil()
+    # test_forward_floor()
+    #
+    # # Relational ops
+    # test_forward_rel_ops()
+    # test_forward_logical()
+    # test_forward_where()
+    # test_forward_matmul()
+    # test_forward_batch_matmul()
 
     # TODO missing tests: rank

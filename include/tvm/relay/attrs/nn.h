@@ -48,6 +48,29 @@ struct BiasAddAttrs : public tvm::AttrsNode<BiasAddAttrs> {
   }
 };
 
+/*! \brief Attributes used in dilation2d operators */
+struct Dilation2DAttrs : public tvm::AttrsNode<Dilation2DAttrs> {
+  Array<IndexExpr> strides;
+  Array<IndexExpr> padding;
+  Array<IndexExpr> rate;
+  Array<IndexExpr> kernel_size;
+  
+
+  TVM_DECLARE_ATTRS(Dilation2DAttrs, "relay.attrs.Dilation2DAttrs") {
+    TVM_ATTR_FIELD(strides).set_default(Array<IndexExpr>({1, 1}))
+        .describe("Specifies the strides of the dilation.");
+    TVM_ATTR_FIELD(padding).set_default(Array<IndexExpr>({0, 0}))
+        .describe("If padding is non-zero, then the input is implicitly zero-padded"
+                  "on both sides for padding number of points");
+    TVM_ATTR_FIELD(rate).set_default(Array<IndexExpr>({1, 1}))
+        .describe("Specifies the dilation rate to use for dilated convolution.");
+    TVM_ATTR_FIELD(kernel_size)
+        .describe("Specifies the dimensions of the dilation window.")
+        .set_default(NullValue<Array<IndexExpr> >());
+  }
+};
+
+
 /*! \brief Attributes used in convolution operators */
 struct Conv2DAttrs : public tvm::AttrsNode<Conv2DAttrs> {
   Array<IndexExpr> strides;
