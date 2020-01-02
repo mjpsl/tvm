@@ -958,14 +958,15 @@ def _find_conv2d_op(op):
 
 
 @reg.register_compute("nn.dilation2d")
-def compute_dilation2d(attrs, inputs, target):
+def compute_dilation2d(attrs, inputs, out_type, target):
     """Compute definition of dilation2d"""
     print('python/tvm/relay/op/nn/_nn.py will call topi.nn.dilation2d')
     padding = get_const_tuple(attrs.padding)
     strides = get_const_tuple(attrs.strides)
     rate = get_const_tuple(attrs.rate)
-    
-    (dilation_h, dilation_w) = rate
+    out_dtype = inputs[0].dtype
+    dilation_h = rate[1]
+    dilation_w = rate[2]
     if dilation_h < 1 or dilation_w < 1:
         raise ValueError("dilation should be positive value")
 

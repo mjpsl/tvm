@@ -402,7 +402,7 @@ def test_dilation2d_run():
     def run_test_dilation2d(dtype, out_dtype, scale, dshape, kshape,
                             strides,
                             padding=[0, 0],
-                            rate=[1, 1, 1, 1],
+                            rate=[1, 1, 1],
                             except_targets=None,
                             **attrs):
         if except_targets is None:
@@ -432,17 +432,17 @@ def test_dilation2d_run():
 
     # dilation2d
     dshape = (1, 32, 32, 3)
-    kshape = (1, 3, 3, 3)
+    kshape = (3, 3, 3)
     run_test_dilation2d("float32", "float32", 1, dshape, kshape,
                         strides=[1, 1, 1, 1],
-                        rate=[1, 1, 1, 1],
+                        rate=[1, 1, 1],
                         padding=[0,0])
     #   dilation rate 2
     dshape = (1, 32, 18, 18)
     kshape = (32, 4, 3, 3)
     run_test_dilation2d("float32", "float32", 1, dshape, kshape,
                         stride=[1, 1, 1, 1],
-                        rate=[1, 2, 2, 1],
+                        rate=[ 2, 2, 1],
                         padding='VALID',
                         except_targets=['cuda'])
 

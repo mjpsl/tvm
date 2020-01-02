@@ -53,7 +53,6 @@ struct Dilation2DAttrs : public tvm::AttrsNode<Dilation2DAttrs> {
   Array<IndexExpr> strides;
   Array<IndexExpr> padding;
   Array<IndexExpr> rate;
-  Array<IndexExpr> kernel_size;
   
 
   TVM_DECLARE_ATTRS(Dilation2DAttrs, "relay.attrs.Dilation2DAttrs") {
@@ -64,9 +63,6 @@ struct Dilation2DAttrs : public tvm::AttrsNode<Dilation2DAttrs> {
                   "on both sides for padding number of points");
     TVM_ATTR_FIELD(rate).set_default(Array<IndexExpr>({1, 1}))
         .describe("Specifies the dilation rate to use for dilated convolution.");
-    TVM_ATTR_FIELD(kernel_size)
-        .describe("Specifies the dimensions of the dilation window.")
-        .set_default(NullValue<Array<IndexExpr> >());
   }
 };
 

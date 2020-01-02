@@ -832,7 +832,7 @@ TVM_REGISTER_GENERIC_FUNC(dense)
 /*
 TVM_REGISTER_GLOBAL("topi.nn.dilation2d")
 .set_body([](TVMArgs args, TVMRetValue *rv) {
-  *rv =  nn::dilation2d(args[0], args[1], args[2], args[3],
+  *rv =  topi::nn::dilation2d(args[0], args[1], args[2], args[3],
                    static_cast<nn::PoolType>(static_cast<int>(args[4])),
                    args[5], args[6], args[7]);
   });

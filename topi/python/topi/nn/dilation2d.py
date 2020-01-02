@@ -183,7 +183,7 @@ def dilation2d_nhwc(Input, Filter, stride, padding, rate, out_dtype='float32'):
         (batch, out_height, out_width, out_channel),
         lambda b, i, j, c: tvm.max(
             (PaddedInput[b, i * stride_h + di * dilation_h, j * stride_w + dj * dilation_w,
-                         c,].astype(out_dtype) +
+                         c].astype(out_dtype) +
              Filter[di, dj, c].astype(out_dtype)),
             axis=[di, dj]),
         name='dilation2d', tag="dilation2d")

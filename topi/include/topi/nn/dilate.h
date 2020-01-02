@@ -116,7 +116,7 @@ inline Tensor dilate(const Tensor& x,
 *
 * \return The output tensor in same layout order
 */
-
+/*
 inline Tensor dilation2dImpl(const Tensor& x,
                         const Array<Expr>& kernel_size,
                         const Array<Expr>& stride_size,
@@ -182,13 +182,12 @@ auto temp = do_pad ? pad(x, pad_before, pad_after, x->dtype.min(), "pad_temp") :
 return tvm::compute(out_shape, [&](const Array<Var>& output) {
   Array<Expr> indices;
   for (const Var& var : output) indices.push_back(var);
-  indices.Set(depth_axis, output[depth_axis] * stride_depth + ddepth);
   indices.Set(height_axis, output[height_axis] * stride_height + dheight);
   indices.Set(width_axis, output[width_axis] * stride_width + dwidth);
-  return tvm::max(temp(indices), { ddepth, dheight, dwidth });
+  return tvm::max(temp(indices), { dheight, dwidth });
     }, "tensor", "dilation2d");
 }
-
+*/
 }  // namespace nn
 }  // namespace topi
 #endif  // TOPI_NN_DILATE_H_

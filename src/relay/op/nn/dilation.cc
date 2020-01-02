@@ -29,7 +29,9 @@
 #include <vector>
 
 #include "../../pass/alter_op_layout.h"
+//#include "topi/nn/dilate.h"
 #include "dilation.h"
+
 
 namespace tvm {
 namespace relay {
@@ -50,12 +52,13 @@ Array<Array<Layout> > Dilation2DInferCorrectLayout(
   return Array<Array<Layout> >{{"NHWC", "HWC"},
                                {"NHWC"}};
 }
-
+/*
 template<typename AttrType>
 Array<Tensor> Dilation2DCompute(const Attrs& attrs,
                             const Array<Tensor>& inputs,
-                            const Type& out_type,
-                            const Target& target) {
+                            const Type& out_type
+                            //const Target& target
+                                ) {
   static const Layout kNHWC("NHWC");
   const auto* param = attrs.as<AttrType>();
   CHECK(param != nullptr);
@@ -78,25 +81,20 @@ Array<Tensor> Dilation2DCompute(const Attrs& attrs,
 //      << " or 5-D input (e.g. NCHWc on for vector instructions)"
 //      << " or 6-D input (e.g. NCHWnc for tensor accelerators)";
 
-  if (param->padding.size() == 1) {
-    padding.push_back(padding[0]);
-    padding.push_back(padding[0]);
-    padding.push_back(padding[0]);
-  } else if (param->padding.size() == 2) {
-    padding.push_back(padding[0]);
-    padding.push_back(padding[1]);
-  }
-  if (mode == topi::nn::kAvgPool) {
-    bool count_include_pad = reinterpret_cast<const AvgPool2DAttrs*>(param)->count_include_pad;
-    return Array<Tensor>{
-      topi::nn::pool(inputs[0], pool_size, strides, padding,
-                     mode, ceil_mode, layout.name(), count_include_pad)};
-  } else {
-    return Array<Tensor>{
-      topi::nn::pool(inputs[0], pool_size, strides, padding,
-                     mode, ceil_mode, layout.name())};
-  }
+//  if (param->padding.size() == 1) {
+//    padding.push_back(padding[0]);
+//    padding.push_back(padding[0]);
+//    padding.push_back(padding[0]);
+//  } else if (param->padding.size() == 2) {
+//    padding.push_back(padding[0]);
+//    padding.push_back(padding[1]);
+//  }
+  return Array<Tensor>{
+      topi::nn::dilation2d(inputs[0], pool_size, strides, padding)
+            };
+
 }
+*/
 
 // Positional relay function to create dilation2d operator
 // used by frontend FFI.
@@ -136,7 +134,7 @@ with the layer input to produce a tensor of outputs.
 .add_argument("data", "Tensor", "The input tensor.")
 .add_argument("weight", "Tensor", "The weight tensor.")
 .set_support_level(2)
-.set_attr<FTVMCompute>("FTVMCompute", Dilation2DCompute<Dilation2DAttrs>)
+//.set_attr<FTVMCompute>("FTVMCompute", Dilation2DCompute<Dilation2DAttrs>)
 .add_type_rel("Dilation2D", Dilation2DRel<Dilation2DAttrs>);
 //.set_attr<FInferCorrectLayout>("FInferCorrectLayout", Dilation2DInferCorrectLayout<Dilation2DAttrs>);
 //.set_attr<FTVMCompute>("FTVMCompute", Pool2DCompute<MaxPool2DAttrs, topi::nn::kMaxPool>);
