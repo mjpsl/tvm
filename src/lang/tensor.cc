@@ -18,7 +18,6 @@
  */
 
 /*!
- *  Copyright (c) 2016 by Contributors
  * \file tensor.cc
  */
 #include <tvm/tensor.h>
@@ -57,7 +56,7 @@ Tensor Operation::output(size_t i) const {
 }
 
 Tensor TensorNode::make(Array<Expr> shape,
-                        Type dtype,
+                        DataType dtype,
                         Operation op,
                         int value_index) {
   auto n = make_node<TensorNode>();

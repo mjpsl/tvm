@@ -28,7 +28,6 @@ from tensorflow.python.framework import graph_util
 from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import nn
 from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import gen_array_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import variable_scope
 from tensorflow.python.ops import variables
@@ -238,16 +237,58 @@ def _test_pooling_iteration(input_shape, **kwargs):
 def _test_pooling(input_shape, **kwargs):
     _test_pooling_iteration(input_shape, **kwargs)
 
-    if is_gpu_available() and (len(input_shape) == 4):
-        input_shape = [input_shape[ii] for ii in (0, 3, 1, 2)]
-        kwargs['data_format'] = 'NCHW'
-        _test_pooling_iteration(input_shape, **kwargs)
+    if is_gpu_available():
+        if len(input_shape) == 4:
+            input_shape = [input_shape[ii] for ii in (0, 3, 1, 2)]
+            kwargs['data_format'] = 'NCHW'
+            _test_pooling_iteration(input_shape, **kwargs)
 
 
 def test_forward_pooling():
     """ Pooling """
-
+    # TensorFlow only supports NDHWC for max_pool3d on CPU
     for pool_type in ['AVG', 'MAX']:
+        # NDHWC is the default layout for max_pool3d and avg_pool3d in TensorFlow
+        _test_pooling(input_shape=[1, 3, 32, 32, 32],
+                      window_shape=[2, 2, 2],
+                      padding='VALID',
+                      pooling_type=pool_type,
+                      dilation_rate=[1, 1, 1],
+                      strides=[2, 2, 2])
+
+        _test_pooling(input_shape=[1, 3, 32, 32, 32],
+                      window_shape=[1, 1, 1],
+                      padding='SAME',
+                      pooling_type=pool_type,
+                      dilation_rate=[1, 1, 1],
+                      strides=[1, 1, 1])
+
+        _test_pooling(input_shape=[1, 3, 32, 32, 32],
+                      window_shape=[2, 2, 2],
+                      padding='SAME',
+                      pooling_type=pool_type,
+                      dilation_rate=[1, 1, 1],
+                      strides=[2, 2, 2])
+
+        # test cases for max_pool3d & avg_pool3d with layout NCDHW
+        # TensorFlow pool3d  doesn't support NCDHW on cpu
+        if is_gpu_available():
+            _test_pooling(input_shape=[1, 3, 32, 32, 32],
+                          window_shape=[1, 1, 1],
+                          padding='SAME',
+                          pooling_type=pool_type,
+                          dilation_rate=[1, 1, 1],
+                          strides=[1, 1, 1],
+                          data_format='NCDHW')
+
+            _test_pooling(input_shape=[1, 3, 32, 32, 32],
+                          window_shape=[2, 2, 2],
+                          padding='VALID',
+                          pooling_type=pool_type,
+                          dilation_rate=[1, 1, 1],
+                          strides=[2, 2, 2],
+                          data_format='NCDHW')
+
         _test_pooling(input_shape=[2, 9, 10, 2],
                       window_shape=[1, 1],
                       padding='SAME',
@@ -295,7 +336,8 @@ def test_forward_pooling():
 
 
 def _test_convolution(opname, tensor_in_sizes, filter_in_sizes,
-                      dilations, strides, padding, data_format):
+                      dilations, strides, padding, data_format,
+                      deconv_output_shape=[]):
     """ One iteration of convolution with given shapes and attributes """
 
     total_size_1 = np.prod(tensor_in_sizes)
@@ -326,6 +368,16 @@ def _test_convolution(opname, tensor_in_sizes, filter_in_sizes,
 
             compare_tf_with_tvm(np.reshape(data_array, tensor_in_sizes).astype('float32'),
                                 'Placeholder:0', 'Conv2D:0')
+        elif opname == 'conv_transpose':
+            nn_ops.conv2d_transpose(in_data,
+                                    in_filter,
+                                    output_shape=deconv_output_shape,
+                                    strides=strides,
+                                    padding=padding,
+                                    data_format=data_format)
+
+            compare_tf_with_tvm(np.reshape(data_array, tensor_in_sizes).astype('float32'),
+                                'Placeholder:0', 'conv2d_transpose:0')
         else:
             nn_ops.depthwise_conv2d_native(in_data,
                                            in_filter,
@@ -349,6 +401,34 @@ def test_forward_convolution():
         _test_convolution('depthwise', [4, 124, 17, 17], [1, 1, 124, 1], [1, 1], [1, 1], 'SAME', 'NCHW')
         _test_convolution('depthwise', [4, 12, 17, 17], [3, 3, 12, 1], [1, 1], [2, 2], 'VALID', 'NCHW')
         _test_convolution('depthwise', [4, 12, 17, 17], [3, 3, 12, 2], [1, 1], [2, 2], 'VALID', 'NCHW')
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [1, 1, 176, 32], [1, 1], [1, 1], 'SAME',
+                          'NCHW', [4, 176, 8, 8])
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [2, 2, 176, 32], [1, 1], [1, 1], 'SAME',
+                          'NCHW', [4, 176, 8, 8])
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [2, 2, 176, 32], [1, 1], [2, 2], 'SAME',
+                          'NCHW', [4, 176, 15, 15])
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [3, 3, 176, 32], [1, 1], [1, 1], 'SAME',
+                          'NCHW', [4, 176, 8, 8])
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [3, 3, 176, 32], [1, 1], [2, 2], 'SAME',
+                          'NCHW', [4, 176, 15, 15])
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [3, 3, 176, 32], [1, 1], [2, 2], 'SAME',
+                          'NCHW', [4, 176, 16, 16])
+        _test_convolution('conv_transpose', [4, 19, 8, 8], [3, 3, 19, 19], [1, 1], [2, 2], 'VALID',
+                          'NCHW', [4, 19, 17, 17])
+        _test_convolution('conv_transpose', [4, 19, 17, 17], [1, 1, 124, 19], [1, 1], [1, 1], 'SAME',
+                          'NCHW', [4, 124, 17, 17])
+        _test_convolution('conv_transpose', [4, 19, 17, 17], [3, 3, 124, 19], [1, 1], [1, 1], 'SAME',
+                          'NCHW', [4, 124, 17, 17])
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [3, 3, 12, 32], [1, 1], [2, 2], 'VALID',
+                          'NCHW', [4, 12, 17, 17])
+        # kernel 2x2, strides (2,2)
+        _test_convolution('conv_transpose', [4, 19, 8, 8], [2, 2, 19, 19], [1, 1], [2, 2], 'VALID',
+                          'NCHW', [4, 19, 16, 16])
+        _test_convolution('conv_transpose', [4, 32, 8, 8], [2, 2, 12, 32], [1, 1], [2, 2], 'VALID',
+                          'NCHW', [4, 12, 16, 16])
+        # output channel is 1
+        _test_convolution('conv_transpose', [1, 19, 8, 8], [1, 1, 1, 19], [1, 1], [1, 1], 'VALID',
+                          'NCHW', [1, 1, 8, 8])
 
     _test_convolution('conv', [4, 8, 8, 176], [1, 1, 176, 32], [1, 1], [1, 1], 'SAME', 'NHWC')
     _test_convolution('conv', [4, 17, 17, 19], [3, 3, 19, 19], [1, 1], [2, 2], 'VALID', 'NHWC')
@@ -359,6 +439,35 @@ def test_forward_convolution():
     _test_convolution('depthwise', [4, 17, 17, 124], [1, 1, 124, 1], [1, 1], [1, 1], 'SAME', 'NHWC')
     _test_convolution('depthwise', [4, 17, 17, 12], [3, 3, 12, 1], [1, 1], [2, 2], 'VALID', 'NHWC')
     _test_convolution('depthwise', [4, 17, 17, 12], [3, 3, 12, 2], [1, 1], [2, 2], 'VALID', 'NHWC')
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [1, 1, 176, 32], [1, 1], [1, 1], 'SAME',
+                      'NHWC', [4, 8, 8, 176])
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [2, 2, 176, 32], [1, 1], [1, 1], 'SAME',
+                      'NHWC', [4, 8, 8, 176])
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [2, 2, 176, 32], [1, 1], [2, 2], 'SAME',
+                      'NHWC', [4, 15, 15, 176])
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [3, 3, 176, 32], [1, 1], [1, 1], 'SAME',
+                      'NHWC', [4, 8, 8, 176])
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [3, 3, 176, 32], [1, 1], [2, 2], 'SAME',
+                      'NHWC', [4, 15, 15, 176])
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [3, 3, 176, 32], [1, 1], [2, 2], 'SAME',
+                      'NHWC', [4, 16, 16, 176])
+    _test_convolution('conv_transpose', [4, 8, 8, 19], [3, 3, 19, 19], [1, 1], [2, 2], 'VALID',
+                      'NHWC', [4, 17, 17, 19])
+    _test_convolution('conv_transpose', [4, 17, 17, 19], [1, 1, 124, 19], [1, 1], [1, 1], 'SAME',
+                      'NHWC', [4, 17, 17, 124])
+    _test_convolution('conv_transpose', [4, 17, 17, 19], [3, 3, 124, 19], [1, 1], [1, 1], 'SAME',
+                      'NHWC', [4, 17, 17, 124])
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [3, 3, 12, 32], [1, 1], [2, 2], 'VALID',
+                      'NHWC', [4, 17, 17, 12])
+    # kernel 2x2, strides (2,2)
+    _test_convolution('conv_transpose', [4, 8, 8, 19], [2, 2, 19, 19], [1, 1], [2, 2], 'VALID',
+                      'NHWC', [4, 16, 16, 19])
+    _test_convolution('conv_transpose', [4, 8, 8, 32], [2, 2, 12, 32], [1, 1], [2, 2], 'VALID',
+                      'NHWC', [4, 16, 16, 12])
+    # output channel is 1
+    _test_convolution('conv_transpose', [1, 8, 8, 19], [1, 1, 1, 19], [1, 1], [1, 1], 'VALID',
+                      'NHWC', [1, 8, 8, 1])
+
 
 #######################################################################
 # BiasAdd
@@ -1041,8 +1150,6 @@ def test_forward_stridedslice():
 #######################################################################
 # FloorDiv, RealDiv
 # -----------------
-
-
 def _test_forward_divide(ip_shape, dtype):
     np_numer = np.random.uniform(-100, 100, size=ip_shape).astype(dtype)
     np_denomin = np.random.uniform(1, 100, size=ip_shape).astype(dtype)
@@ -1055,7 +1162,7 @@ def _test_forward_divide(ip_shape, dtype):
 
 
 def _test_forward_floordiv(ip_shape, dtype):
-    np_numer = np.random.uniform(-100, 100, size=ip_shape).astype(dtype)
+    np_numer = np.random.uniform(1, 100, size=ip_shape).astype(dtype)
     tf.reset_default_graph()
     numerator = tf.placeholder(dtype, ip_shape, name="numer")
     tf.math.floordiv(numerator, tf.constant(5, dtype=dtype), name='FloorDiv')
@@ -1067,6 +1174,26 @@ def test_forward_divide():
     _test_forward_divide((4,), 'int32')
     _test_forward_divide((4, 3, 7), 'float32')
     _test_forward_floordiv((4, 3, 7), 'float32')
+    _test_forward_floordiv((4, 3, 7), 'int32')
+
+#######################################################################
+# FloorMod
+# --------
+def _test_forward_floormod(in_shape, if_shape, dtype):
+    np_numer = np.random.uniform(1, 100, size=in_shape).astype(dtype)
+    np_factor = np.random.uniform(1, 100, size=if_shape).astype(dtype)
+    tf.reset_default_graph()
+    numerator = tf.placeholder(dtype, in_shape, name="numer")
+    factor = tf.placeholder(dtype, if_shape, name="factor")
+    tf.floormod(numerator, factor, name='FloorMod')
+    compare_tf_with_tvm([np_numer, np_factor], ['numer:0', 'factor:0'], 'FloorMod:0')
+
+def test_forward_floormod():
+    '''test FloorMod'''
+    _test_forward_floormod((10,), (10,), 'float32')
+    _test_forward_floormod((8, 2), (1,), 'float32')
+    _test_forward_floormod((4, 3, 7), (4, 3, 7), 'float32')
+    _test_forward_floormod((4, 3, 7), (4, 3, 7), 'int32')
 
 
 #######################################################################
@@ -1376,8 +1503,8 @@ def _test_resize_bilinear_from_tensor(in_shape, align_corners):
 
     with tf.Graph().as_default():
         in_data = array_ops.placeholder(
-            shape=[in_shape[0], in_shape[1], None, None], dtype=data.dtype)
-        to_shape = tf.shape(in_data)[2:]
+            shape=[in_shape[0], None, None, in_shape[3]], dtype=data.dtype)
+        to_shape = tf.shape(in_data)[1:3]
         tf.image.resize_bilinear(
             in_data, to_shape, align_corners=align_corners)
 
@@ -1400,14 +1527,29 @@ def _test_resize_nearest_neighbor(in_shape, to_shape):
         compare_tf_with_tvm(data, 'Placeholder:0', 'resize_nearest_neighbor:0')
 
 
+def _test_resize_nearest_neighbor_dynamic_shape(in_shape, scale):
+    """ One iteration of resize nearest neighbor for graph with dynamic input shape """
+
+    data = np.random.uniform(size=in_shape).astype('float32')
+    with tf.Graph().as_default():
+        in_data = array_ops.placeholder(shape=None, dtype=data.dtype)
+        # multiply input shape by scale factor
+        new_shape = tf.shape(in_data)[1:3] * tf.constant(scale, dtype=tf.int32)
+        tf.image.resize_nearest_neighbor(
+            in_data, new_shape, name='resize_nearest_neighbor')
+
+        compare_tf_with_tvm(data, 'Placeholder:0', 'resize_nearest_neighbor:0')
+
+
 def test_forward_resize():
     """ Resize Bilinear, Nearest_Neighbor """
-
-    _test_resize_bilinear((4, 16, 32, 32), [50, 50], False)
-    _test_resize_bilinear((6, 32, 64, 64), [20, 20], True)
-    _test_resize_bilinear_from_tensor((4, 16, 32, 32), False)
-    _test_resize_bilinear_from_tensor((6, 32, 50, 50), True)
-    _test_resize_nearest_neighbor((6, 32, 64, 64), [20, 20])
+    # TF default layout is NHWC
+    _test_resize_bilinear((4, 32, 32, 3), [50, 50], False)
+    _test_resize_bilinear((6, 32, 32, 3), [20, 20], True)
+    _test_resize_bilinear_from_tensor((4, 32, 32, 3), False)
+    _test_resize_bilinear_from_tensor((6, 50, 50, 3), True)
+    _test_resize_nearest_neighbor((6, 32, 32, 3), [20, 20])
+    _test_resize_nearest_neighbor_dynamic_shape((1, 16, 16, 3), scale=[2, 2])
 
 
 #######################################################################
@@ -2114,6 +2256,22 @@ def _test_forward_transpose(ishape, axes=None):
 
         compare_tf_with_tvm(data, 'transpose_data:0', 'transpose:0')
 
+def _test_forward_tranapose_axes_input(ishape, axes):
+    data = np.random.uniform(size=ishape).astype(np.float32)
+    axes_np = np.array(axes).astype(np.int32)
+
+    with tf.Graph().as_default():
+        in1 = tf.placeholder(
+            shape=data.shape, dtype=data.dtype, name="transpose_data")
+
+        const1 = tf.constant(axes_np, dtype=tf.int32)
+
+        # make axes an input to tf.transpose, but not an input to the graph,
+        # so it can be extracted with infer_value_simulated
+        axes = tf.reverse(const1, axis=[-1])
+        tf.transpose(in1, axes)
+
+        compare_tf_with_tvm([data], ['transpose_data:0'], 'transpose:0')
 
 def test_forward_transpose():
     _test_forward_transpose((2, 3, 4), (1, 2, 0))
@@ -2122,7 +2280,23 @@ def test_forward_transpose():
     _test_forward_transpose((2, 3, 4), (1, 2, 0))
     _test_forward_transpose((2, 3, 4), (0, 1, 2))
     _test_forward_transpose((2, 3, 4, 5), (3, 0, 1, 2))
+    _test_forward_tranapose_axes_input((2, 3, 4), (1, 2, 0))
+    _test_forward_tranapose_axes_input((2, 3, 4, 5), (3, 0, 1, 2))
 
+
+def _test_forward_slice_operation_input(input_value, begin_value, size_value):
+    input_data = np.array(input_value, dtype=np.float32)
+    with tf.Graph().as_default():
+        input_tensor = tf.placeholder(
+            shape=input_data.shape, dtype=input_data.dtype, name="input")
+        begin_tensor = tf.expand_dims(begin_value, axis=0)
+        size_tensor = tf.expand_dims(size_value, axis=0)
+        slice_tensor = tf.slice(input_tensor, begin_tensor, size_tensor, name='slice_output')
+        compare_tf_with_tvm([input_data], ['input:0'], 'slice_output:0')
+
+
+def test_forward_slice():
+    _test_forward_slice_operation_input([1, 1], 0, 2)
 
 def test_forward_ceil():
     ishape = (1, 3, 10, 10)
@@ -2737,116 +2911,116 @@ def test_forward_dilation():
 # Main
 # ----
 if __name__ == '__main__':
-    test_forward_dilation()
-    # Transforms
-    # test_forward_transpose()
-    # test_forward_reshape()
-    # test_forward_depthtospace()
-    # test_forward_spacetodepth()
-    # test_forward_squeeze()
-    # test_forward_pack()
-    # test_forward_size()
-    # test_forward_broadcast_to()
-    # test_forward_fill()
-    # test_forward_crop()
-    # test_forward_resize()
-    # test_forward_crop_and_resize()
-    # test_forward_pad()
-    # test_forward_unpack()
-    # test_forward_gather()
-    # test_forward_gather_nd()
-    # test_forward_stridedslice()
-    # test_forward_split()
-    # test_forward_unstack()
-    # test_forward_tile()
-    # test_forward_top_k_v2()
-    # test_forward_clip_by_value()
-    # test_forward_maximum()
-    # test_forward_minimum()
-    # test_forward_range()
-    # test_forward_right_shift()
-    # test_forward_left_shift()
-    # test_forward_truncatemod()
-    # test_forward_one_hot()
-    #
-    # # Activations
-    # test_forward_sigmoid()
-    # test_forward_relu()
-    # test_forward_leaky_relu()
-    # test_forward_elu()
-    # test_forward_selu()
-    # test_forward_tanh()
-    #
-    # # Tensor
-    # test_forward_round()
-    # test_forward_reverse_v2()
-    # test_forward_pow_exp()
-    # test_forward_sign()
-    # test_forward_log()
-    # test_forward_log1p()
-    # test_forward_cos()
-    # test_forward_sin()
-    # test_forward_negative()
-    # test_forward_divide()
-    # test_forward_abs()
-    # test_forward_isfinite()
-    # test_forward_softplus()
-    # test_forward_sqrt()
-    # test_forward_rsqrt()
-    # test_forward_expand_dims()
-    # test_forward_square()
-    # test_forward_softmax()
-    # test_forward_log_softmax()
-    # test_forward_bias_add()
-    # test_forward_zeros_like()
-    # test_forward_erf()
-    # test_forward_squared_difference()
-    # test_forward_add_n()
-    #
-    # # Reductions
-    # test_forward_argminmax()
-    # test_forward_reduce()
-    # test_forward_mean()
-    # test_forward_reduce_prod()
-    # test_forward_reduce_all()
-    # test_forward_reduce_any()
-    # test_forward_reduce_min()
-    #
-    # # General
-    # test_forward_multi_input()
-    # test_forward_multi_output()
-    # test_forward_variable()
-    # test_placeholder()
-    #
-    # # NN
-    # test_forward_convolution()
-    # test_forward_pooling()
-    # test_forward_concat_v2()
-    # test_forward_lrn()
-    # test_forward_l2_normalize()
-    # test_forward_space_to_batch_nd()
-    # test_forward_batch_to_space_nd()
-    #
-    # # End to End
-    # test_forward_inception_v3()
-    # test_forward_inception_v1()
-    # test_forward_mobilenet()
-    # test_forward_resnetv2()
-    # test_forward_placeholder()
-    # test_forward_ptb()
-    #
-    # # RNN
-    # test_forward_lstm()
-    #
-    # # Elementwise
-    # test_forward_ceil()
-    # test_forward_floor()
-    #
-    # # Relational ops
-    # test_forward_rel_ops()
-    # test_forward_logical()
-    # test_forward_where()
-    # test_forward_matmul()
-    # test_forward_batch_matmul()
 
-    # TODO missing tests: rank
+    # Transforms
+    test_forward_slice()
+    test_forward_transpose()
+    test_forward_reshape()
+    test_forward_depthtospace()
+    test_forward_spacetodepth()
+    test_forward_squeeze()
+    test_forward_pack()
+    test_forward_size()
+    test_forward_broadcast_to()
+    test_forward_fill()
+    test_forward_crop()
+    test_forward_resize()
+    test_forward_crop_and_resize()
+    test_forward_pad()
+    test_forward_unpack()
+    test_forward_gather()
+    test_forward_gather_nd()
+    test_forward_stridedslice()
+    test_forward_split()
+    test_forward_unstack()
+    test_forward_tile()
+    test_forward_top_k_v2()
+    test_forward_clip_by_value()
+    test_forward_maximum()
+    test_forward_minimum()
+    test_forward_range()
+    test_forward_right_shift()
+    test_forward_left_shift()
+    test_forward_truncatemod()
+    test_forward_one_hot()
+
+    # Activations
+    test_forward_sigmoid()
+    test_forward_relu()
+    test_forward_leaky_relu()
+    test_forward_elu()
+    test_forward_selu()
+    test_forward_tanh()
+
+    # Tensor
+    test_forward_round()
+    test_forward_reverse_v2()
+    test_forward_pow_exp()
+    test_forward_sign()
+    test_forward_log()
+    test_forward_log1p()
+    test_forward_cos()
+    test_forward_sin()
+    test_forward_negative()
+    test_forward_divide()
+    test_forward_abs()
+    test_forward_softplus()
+    test_forward_sqrt()
+    test_forward_rsqrt()
+    test_forward_expand_dims()
+    test_forward_square()
+    test_forward_softmax()
+    test_forward_log_softmax()
+    test_forward_bias_add()
+    test_forward_zeros_like()
+    test_forward_erf()
+    test_forward_squared_difference()
+    test_forward_add_n()
+    test_forward_floormod()
+
+    # Reductions
+    test_forward_argminmax()
+    test_forward_reduce()
+    test_forward_mean()
+    test_forward_reduce_prod()
+    test_forward_reduce_all()
+    test_forward_reduce_any()
+    test_forward_reduce_min()
+
+    # General
+    test_forward_multi_input()
+    test_forward_multi_output()
+    test_forward_variable()
+    test_placeholder()
+
+    # NN
+    test_forward_convolution()
+    test_forward_pooling()
+    test_forward_concat_v2()
+    test_forward_lrn()
+    test_forward_l2_normalize()
+    test_forward_space_to_batch_nd()
+    test_forward_batch_to_space_nd()
+
+    # End to End
+    test_forward_inception_v3()
+    test_forward_inception_v1()
+    test_forward_mobilenet()
+    test_forward_resnetv2()
+    test_forward_placeholder()
+    test_forward_ptb()
+
+    # RNN
+    test_forward_lstm()
+
+    # Elementwise
+    test_forward_ceil()
+    test_forward_floor()
+
+    # Relational ops
+    test_forward_rel_ops()
+    test_forward_logical()
+    test_forward_where()
+    test_forward_matmul()
+    test_forward_batch_matmul()
+

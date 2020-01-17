@@ -18,7 +18,6 @@
  */
 
 /*!
- *  Copyright (c) 2018 by Contributors
  * \file sparse.cc
  * \brief Property def of nn.sparse_dense operator.
  */
@@ -28,7 +27,7 @@
 #include <tvm/relay/attrs/nn.h>
 #include <vector>
 
-#include "../../pass/alter_op_layout.h"
+#include "../../pass/infer_layout_util.h"
 
 namespace tvm {
 namespace relay {

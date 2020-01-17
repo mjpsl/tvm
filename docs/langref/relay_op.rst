@@ -71,10 +71,13 @@ This level enables typical convnet models.
    tvm.relay.nn.conv2d_transpose
    tvm.relay.nn.dense
    tvm.relay.nn.max_pool2d
+   tvm.relay.nn.max_pool3d
    tvm.relay.nn.avg_pool2d
+   tvm.relay.nn.avg_pool3d
    tvm.relay.nn.global_max_pool2d
    tvm.relay.nn.global_avg_pool2d
    tvm.relay.nn.upsampling
+   tvm.relay.nn.upsampling3d
    tvm.relay.nn.batch_flatten
    tvm.relay.nn.pad
    tvm.relay.nn.lrn
@@ -227,7 +230,9 @@ Level 1 Definitions
 .. autofunction:: tvm.relay.subtract
 .. autofunction:: tvm.relay.multiply
 .. autofunction:: tvm.relay.divide
+.. autofunction:: tvm.relay.floor_divide
 .. autofunction:: tvm.relay.mod
+.. autofunction:: tvm.relay.floor_mod
 .. autofunction:: tvm.relay.tanh
 .. autofunction:: tvm.relay.concatenate
 .. autofunction:: tvm.relay.expand_dims
@@ -245,10 +250,13 @@ Level 2 Definitions
 .. autofunction:: tvm.relay.nn.conv2d_transpose
 .. autofunction:: tvm.relay.nn.dense
 .. autofunction:: tvm.relay.nn.max_pool2d
+.. autofunction:: tvm.relay.nn.max_pool3d
 .. autofunction:: tvm.relay.nn.avg_pool2d
+.. autofunction:: tvm.relay.nn.avg_pool3d
 .. autofunction:: tvm.relay.nn.global_max_pool2d
 .. autofunction:: tvm.relay.nn.global_avg_pool2d
 .. autofunction:: tvm.relay.nn.upsampling
+.. autofunction:: tvm.relay.nn.upsampling3d
 .. autofunction:: tvm.relay.nn.batch_flatten
 .. autofunction:: tvm.relay.nn.pad
 .. autofunction:: tvm.relay.nn.lrn

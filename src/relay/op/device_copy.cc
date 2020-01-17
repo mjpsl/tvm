@@ -18,7 +18,6 @@
  */
 
 /*!
- * Copyright (c) 2018 by Contributors
  *
  * \file src/relay/op/device_copy.cc
  * \brief Crossing device data copy operator.
@@ -34,7 +33,7 @@
 #include <tvm/relay/op_attr_types.h>
 
 #include "type_relations.h"
-#include "../pass/alter_op_layout.h"
+#include "../pass/infer_layout_util.h"
 
 namespace tvm {
 namespace relay {

@@ -18,7 +18,6 @@
  */
 
 /*!
- *  Copyright (c) 2017 by Contributors
  * \brief Tensor Compute Op.
  * \file tensor_compute_op.cc
  */
@@ -47,7 +46,7 @@ int TensorComputeOpNode::num_outputs() const {
   return static_cast<int>(this->intrin->buffers.size() - this->inputs.size());
 }
 
-Type TensorComputeOpNode::output_dtype(size_t i) const {
+DataType TensorComputeOpNode::output_dtype(size_t i) const {
   return this->intrin->buffers[this->inputs.size() + i]->dtype;
 }
 
@@ -156,7 +155,7 @@ Stmt TensorComputeOpNode::BuildProvide(
     }
     input_bind_nest.emplace_back(AttrStmt::make(
         bind_spec, ir::attr::buffer_bind_scope,
-        Call::make(Handle(), ir::intrinsic::tvm_tuple, tuple, Call::Intrinsic), nop));
+        Call::make(DataType::Handle(), ir::intrinsic::tvm_tuple, tuple, Call::Intrinsic), nop));
   }
 
   // output binding
@@ -180,7 +179,7 @@ Stmt TensorComputeOpNode::BuildProvide(
 
     output_bind_nest.emplace_back(AttrStmt::make(
         bind_spec, ir::attr::buffer_bind_scope,
-        Call::make(Handle(), ir::intrinsic::tvm_tuple, tuple, Call::Intrinsic), nop));
+        Call::make(DataType::Handle(), ir::intrinsic::tvm_tuple, tuple, Call::Intrinsic), nop));
   }
 
   // Check variable remap

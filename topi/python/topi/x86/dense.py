@@ -32,7 +32,7 @@ def _declaration_dense(cfg, data, weight, bias=None, out_dtype=None):
     if "cblas" in target.libs:
         C = cblas.matmul(data, weight, False, True)
         if bias is not None:
-            C = tvm.compute(C.shape, lambda i, j: C[i, j] + bias[j].astype(out_dtype),
+            C = tvm.compute(C.shape, lambda i, j: C[i, j] + bias[j],
                             tag=tag.BROADCAST)
         return C
 
@@ -59,8 +59,8 @@ def _declaration_dense_pack(cfg, data, weight, bias=None, out_dtype=None):
     M, K = get_const_tuple(data.shape) # batch, in_dim
     N, _ = get_const_tuple(weight.shape) # out_dim
     # create tuning space
-    cfg.define_split("tile_y", 32 if isinstance(M, tvm.expr.Var) else M, num_outputs=2)
-    cfg.define_split("tile_x", 32 if isinstance(N, tvm.expr.Var) else N, num_outputs=2)
+    cfg.define_split("tile_y", 32 if isinstance(M, tvm.expr.Var) else M, num_outputs=3)
+    cfg.define_split("tile_x", 32 if isinstance(N, tvm.expr.Var) else N, num_outputs=3)
     cfg.define_split("tile_k", 32 if isinstance(K, tvm.expr.Var) else K, num_outputs=2)
     if cfg.is_fallback:
         _default_dense_pack_config(cfg, M, N, K)

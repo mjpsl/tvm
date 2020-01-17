@@ -533,6 +533,26 @@ TVM_DLL Pass CanonicalizeOps();
 TVM_DLL Pass AlterOpLayout();
 
 /*!
+ * \brief Given a dest layout, this pass transforms the expr such that most of the ops input data
+ * layout is changed to the dest layout. In ideal situation, there are only 2 layout transforms, one
+ * at the start and one at the end.
+ *
+ * This pass is not a part of relay.build and is expected to be called between framework-relay
+ * parser and relay.build call. This is very helpful for hardware backends that support/prefer only
+ * type of data layout.
+ *
+ * RFC - https://discuss.tvm.ai/t/layout-conversion-pass/4009
+ *
+ * This pass uses most of the AlterOpLayout and InferCorrectLayout infrastructure. We can define new
+ * layouts for conv2d ops for now. Most of the other operators try to adapt to their input layout
+ * using the InferCorrectLayout infrastructure.
+ *
+ * \param desired_layout The desired layout.
+ * \return The pass.
+ */
+TVM_DLL Pass ConvertLayout(const std::string& desired_layout);
+
+/*!
  * \brief Legalizes an expr with another expression.
  * \param legalize_map_attr_name The Op's attr name which corresponds to the legalize rule function.
  * One can collect and isolate similar type of legalize transformations using this param. For
@@ -552,17 +572,20 @@ TVM_DLL Pass Legalize(const std::string& legalize_map_attr_name = "FTVMLegalize"
 TVM_DLL Pass CanonicalizeCast();
 
 /*!
- * \brief Add abstraction over a function
+ * \brief Add abstraction over a constructor or global variable bound to a function.
  *
  * For example: `square` is transformed to
- * `fun x -> square x`.
+ * `fn (%x: int32) -> int32 { square(x) }`.
  *
  * See https://en.wikipedia.org/wiki/Lambda_calculus#%CE%B7-conversion
  * for more details.
  *
+ * \param expand_constructor Whether to expand constructors.
+ * \param expand_global_var Whether to expand global variables.
+ *
  * \return The pass.
  */
-TVM_DLL Pass EtaExpand();
+TVM_DLL Pass EtaExpand(bool expand_constructor, bool expand_global_var);
 
 /*!
  * \brief Print the IR for a module to help debugging.

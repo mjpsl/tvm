@@ -18,8 +18,7 @@
  */
 
 /*!
- *  Copyright (c) 2017 by Contributors
- *  Exposre of pass functions.
+ *  Exposure of pass functions.
  * \file api_pass.cc
  */
 #include <tvm/expr.h>
@@ -160,9 +159,7 @@ REGISTER_PASS(InjectPrefetch);
 REGISTER_PASS(InjectDoubleBuffer);
 REGISTER_PASS(LoopPartition);
 REGISTER_PASS(RemoveNoOp);
-REGISTER_PASS(SplitPipeline);
 REGISTER_PASS(LiftAttrScope);
-REGISTER_PASS(NarrowChannelAccess);
 REGISTER_PASS(LowerThreadAllreduce);
 REGISTER_PASS(LowerWarpMemory);
 REGISTER_PASS(RemapThreadAxis);

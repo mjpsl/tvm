@@ -18,7 +18,6 @@
  */
 
 /*!
- *  Copyright (c) 2018 by Contributors
  * \file type_infer.cc
  * \brief Relay type inference and checking.
  *
@@ -359,7 +358,7 @@ class TypeInferencer : private ExprFunctor<Type(const Expr&)>,
     // that is a rank-0 boolean tensor.
     Type cond_type = this->GetType(ite->cond);
     this->Unify(cond_type,
-                TensorTypeNode::Scalar(tvm::Bool()),
+                TensorTypeNode::Scalar(tvm::DataType::Bool()),
                 ite->cond);
     Type checked_true = this->GetType(ite->true_branch);
     Type checked_false = this->GetType(ite->false_branch);
@@ -653,7 +652,7 @@ class TypeInferencer::Resolver : public ExprMutator, PatternMutator {
   }
 
   Expr VisitExpr_(const ConstructorNode* op) final {
-    return GetRef<Constructor>(op);
+    return AttachCheckedType(op);
   }
 
   Expr VisitExpr_(const MatchNode* op) final {

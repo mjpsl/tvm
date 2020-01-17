@@ -23,14 +23,14 @@
 #ifndef TVM_NODE_CONTAINER_H_
 #define TVM_NODE_CONTAINER_H_
 
+#include <tvm/node/node.h>
+
 #include <type_traits>
 #include <vector>
 #include <initializer_list>
 #include <unordered_map>
 #include <utility>
 #include <string>
-#include "node.h"
-#include "memory.h"
 
 namespace tvm {
 
@@ -137,7 +137,7 @@ class IterAdapter {
  * \tparam T The content NodeRef type.
  */
 template<typename T,
-         typename = typename std::enable_if<std::is_base_of<NodeRef, T>::value>::type >
+         typename = typename std::enable_if<std::is_base_of<ObjectRef, T>::value>::type >
 class Array : public NodeRef {
  public:
   /*!
@@ -330,9 +330,9 @@ class Array : public NodeRef {
 template<typename K,
          typename V,
          typename = typename std::enable_if<
-           std::is_base_of<NodeRef, K>::value ||
+           std::is_base_of<ObjectRef, K>::value ||
            std::is_base_of<std::string, K>::value >::type,
-         typename = typename std::enable_if<std::is_base_of<NodeRef, V>::value>::type>
+         typename = typename std::enable_if<std::is_base_of<ObjectRef, V>::value>::type>
 class Map : public NodeRef {
  public:
   /*!

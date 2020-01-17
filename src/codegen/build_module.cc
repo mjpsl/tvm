@@ -85,7 +85,9 @@ Target CreateTarget(const std::string& target_name,
   }
   t->device_type = kDLCPU;
   t->thread_warp_size = 1;
-  if (target_name == "c" || target_name == "llvm") {
+  if (target_name == "c" && t->device_name == "micro_dev") {
+    t->device_type = kDLMicroDev;
+  } else if (target_name == "c" || target_name == "llvm") {
     t->keys_array.push_back(ir::StringImm::make("cpu"));
   } else if (target_name == "cuda" || target_name == "nvptx") {
     t->device_type = kDLGPU;
@@ -307,6 +309,10 @@ Target intel_graphics(const std::vector<std::string>& options) {
 Target stackvm(const std::vector<std::string>& options) {
   return CreateTarget("stackvm", options);
 }
+
+Target ext_dev(const std::vector<std::string>& options) {
+  return CreateTarget("ext_dev", options);
+}
 }  // namespace target
 
 bool LLVMEnabled() {
@@ -328,12 +334,12 @@ Target DefaultTargetHost(Target target) {
 }
 
 Buffer BufferWithOffsetAlignment(Array<Expr> shape,
-                                 Type dtype,
+                                 DataType dtype,
                                  std::string name,
                                  int data_alignment,
                                  int offset_factor,
                                  bool compact) {
-  auto data = Var(name, Handle());
+  auto data = Var(name, DataType::Handle());
   bool has_any = false;
   if (!compact) {
     for (const auto& it : shape) {
@@ -347,7 +353,7 @@ Buffer BufferWithOffsetAlignment(Array<Expr> shape,
 
   Expr elem_offset;
   if (offset_factor != 0) {
-    elem_offset = Var(name + "_elem_offset", shape[0].type());
+    elem_offset = Var(name + "_elem_offset", shape[0].dtype());
   } else {
     elem_offset = Expr();
   }
@@ -672,6 +678,7 @@ TVM_STATIC_IR_FUNCTOR(IRPrinter, vtable)
   p->stream << "instrument_bound_checkers=" << op->instrument_bound_checkers << ", ";
   p->stream << "disable_select_rewriting=" << op->disable_select_rewriting;
   p->stream << "disable_vectorize=" << op->disable_vectorize;
+  p->stream << "disable_assert=" << op->disable_assert;
   p->stream << ")";
 });
 

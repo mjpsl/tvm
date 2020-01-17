@@ -18,7 +18,6 @@
  */
 
 /*!
- *  Copyright (c) 2019 by Contributors
  * \file pretty_printer.cc
  * \brief Pretty printer for Relay programs
  * Supports ANF, GNF, and metadata.
@@ -425,17 +424,17 @@ class PrettyPrinter :
     // Print out simple scalars directly.
     if (op->is_scalar()) {
       std::ostringstream os;
-      DataType dtype = TVMType2Type(op->data->dtype);
+      DataType dtype = DataType(op->data->dtype);
       CHECK_EQ(op->data->ctx.device_type, kDLCPU);
-      if (dtype == Int(32)) {
+      if (dtype == DataType::Int(32)) {
         return PrintConstScalar(dtype, static_cast<const int32_t*>(op->data->data));
-      } else if (dtype == Int(64)) {
+      } else if (dtype == DataType::Int(64)) {
         return PrintConstScalar(dtype, static_cast<const int64_t*>(op->data->data));
-      } else if (dtype == Float(32)) {
+      } else if (dtype == DataType::Float(32)) {
         return PrintConstScalar(dtype, static_cast<const float*>(op->data->data));
-      } else if (dtype == Float(64)) {
+      } else if (dtype == DataType::Float(64)) {
         return PrintConstScalar(dtype, static_cast<const double*>(op->data->data));
-      } else if (dtype == Bool()) {
+      } else if (dtype == DataType::Bool()) {
         return PrintConstScalar(dtype, static_cast<const uint8_t*>(op->data->data));
       }
     }
@@ -669,7 +668,7 @@ class PrettyPrinter :
   Doc VisitExpr_(const ConstructorNode* n) final {
     Doc doc;
     doc << n->name_hint;
-    if (n->inputs.size() != 0) {
+    if (in_adt_def_ && n->inputs.size() != 0) {
       doc << "(";
       std::vector<Doc> inputs;
       for (Type input : n->inputs) {
@@ -775,6 +774,7 @@ class PrettyPrinter :
   }
 
   Doc VisitType_(const TypeDataNode* node) final {
+    in_adt_def_ = true;
     Doc doc;
     doc << "type " << Print(node->header);
 
@@ -802,6 +802,7 @@ class PrettyPrinter :
       adt_body << ",";
     }
     doc << Brace(adt_body);
+    in_adt_def_ = false;
     return doc;
   }
 
@@ -842,15 +843,15 @@ class PrettyPrinter :
   }
 
   Doc VisitAttr_(const ir::IntImm* op) final {
-    return PrintConstScalar(op->type, &(op->value));
+    return PrintConstScalar(op->dtype, &(op->value));
   }
 
   Doc VisitAttr_(const ir::UIntImm* op) final {
-    return PrintConstScalar(op->type, &(op->value));
+    return PrintConstScalar(op->dtype, &(op->value));
   }
 
   Doc VisitAttr_(const ir::FloatImm* op) final {
-    return PrintConstScalar(op->type, &(op->value));
+    return PrintConstScalar(op->dtype, &(op->value));
   }
 
   Doc VisitAttr_(const ir::StringImm* op) final {
@@ -876,6 +877,8 @@ class PrettyPrinter :
   TextMetaDataContext meta_;
   /*! \brief counter of temporary variable */
   size_t temp_var_counter_{0};
+  /*! \brief whether the printer is currently in an ADT definition */
+  bool in_adt_def_;
   /*! \brief arena for dependency graph */
   common::Arena arena_;
   /*! \brief dependency graph of the expr */
@@ -922,7 +925,7 @@ class PrettyPrinter::AttrPrinter : public AttrVisitor {
     LOG(FATAL) << "do not allow void as argument";
   }
   void Visit(const char* key, DataType* value) final {
-    PrintKV(key, PrintString(runtime::TVMType2String(Type2TVMType(*value))));
+    PrintKV(key, PrintString(runtime::TVMType2String(*value)));
   }
   void Visit(const char* key, runtime::NDArray* value) final {
     LOG(FATAL) << "do not allow NDarray as argument";

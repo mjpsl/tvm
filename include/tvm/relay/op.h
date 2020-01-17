@@ -258,6 +258,12 @@ class OpRegistry {
   inline OpRegistry& set_attr(const std::string& attr_name,  // NOLINT(*)
                               const ValueType& value, int plevel = 10);
 
+  /*!
+   * \brief Resets an attr of the registry.
+   * \param attr_name The name of the attribute.
+   */
+  inline void reset_attr(const std::string& attr_name);
+
   // set the name of the op to be the same as registry
   inline OpRegistry& set_name() {  // NOLINT(*)
     if (get()->name.length() == 0) {
@@ -588,12 +594,11 @@ inline ValueType OpMap<ValueType>::get(const Expr& expr,
   return map_.get<ValueType>(expr, def_value);
 }
 
-
 /*!
- * \brief Check that an expression is a "primtive operator".
+ * \brief Check that an expression is a "primitive operator".
  *
  * Will return true if the expression is an operator which
- * matches the form of primtive operators registered directly
+ * matches the form of primitive operators registered directly
  * by the Relay codebase.
  *
  * That is the arguments are all type variables, and there is a single
