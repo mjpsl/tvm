@@ -109,13 +109,13 @@ Type ConcreteBroadcast(const TensorType& t1,
 }
 
 bool IdentityCompRel(const Array<Type>& types,
-                 int num_inputs,
-                 const Attrs& attrs,
-                 const TypeReporter& reporter) {
+                     int num_inputs,
+                     const Attrs& attrs,
+                     const TypeReporter& reporter) {
   reporter->Assign(types[1],
                   ConcreteBroadcast(ToTensorType(types[0]),
                   ToTensorType(types[0]),
-                  ::tvm::Bool()));
+                  ::tvm::DataType::Bool()));
   return true;
 }
 

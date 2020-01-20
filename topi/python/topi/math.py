@@ -259,7 +259,6 @@ def isfinite(x):
     return tvm.compute(x.shape, lambda *i: tvm.isfinite(x(*i)))
 
 
-
 @tvm.tag_scope(tag=tag.ELEMWISE)
 def isnan(x):
     """Check if value of x is NaN, element-wise.

@@ -201,6 +201,7 @@ def compare_tf_with_tvm(in_data, in_name, out_name, init_global_variables=False,
         sess.close()
 
 
+
 def is_gpu_available():
     from tensorflow.python.client import device_lib
     local_device_protos = device_lib.list_local_devices()
@@ -2214,6 +2215,19 @@ def test_forward_lrn():
     _test_lrn((1, 3, 20, 20), 3, 1, 1.0, 1.0, 0.5)
 
 #######################################################################
+# isfinite
+# ------------
+
+
+def test_forward_isfinite():
+    """test operator Isfinite"""
+    np_data = np.random.uniform(1, 100, size=(9, 11)).astype(np.float32)
+    tf.reset_default_graph()
+    in_data = tf.placeholder(tf.float32, (9, 11), name="in_data")
+    tf.math.is_finite(in_data, name="isfinite")
+    compare_tf_with_tvm([np_data], ['in_data:0'], 'isfinite:0')
+
+#######################################################################
 # l2_normalize
 # ------------
 
@@ -2401,6 +2415,7 @@ def test_forward_abs():
 def test_forward_isfinite():
     """test operator Isfinite"""
     np_data = np.random.uniform(1, 100, size=(9, 11)).astype(np.float32)
+    np_data[1][2]=np.infty
     tf.reset_default_graph()
     in_data = tf.placeholder(tf.float32, (9, 11), name="in_data")
     tf.math.is_finite(in_data, name="isfinite")
@@ -2871,43 +2886,7 @@ def test_forward_add_n():
     _test_forward_add_n(in3)
     _test_forward_add_n(in4)
     _test_forward_add_n(in5)
-#######################################################################
-#Dilation2d
-def _test_dilation2d(opname, tensor_in_sizes, filter_in_sizes,
-                     strides, rates, padding,
-                     deconv_output_shape=[]):
-    """ One iteration of dilation2d with given shapes and attributes """
 
-    total_size_1 = np.prod(tensor_in_sizes)
-    total_size_2 = np.prod(filter_in_sizes)
-    # Initializes the input tensor with array containing incrementing
-    # numbers from 1.
-    data_array = [f * 1.0 for f in range(1, total_size_1 + 1)]
-    filter_array = [f * 1.0 for f in range(1, total_size_2 + 1)]
-
-    with tf.Graph().as_default():
-        in_data = array_ops.placeholder(shape=tensor_in_sizes, dtype='float32')
-        in_filter = constant_op.constant(
-            filter_array, shape=filter_in_sizes, dtype='float32')
-
-        if opname == 'dil2d':
-            nn_ops.dilation2d(in_data,
-                              in_filter,
-                              strides=strides,
-                              rates=rates,
-                              padding=padding)
-
-            compare_tf_with_tvm(np.reshape(data_array, tensor_in_sizes).astype('float32'),
-                                'Placeholder:0', 'dilation2D:0')
-
-
-def test_forward_dilation():
-    if is_gpu_available():
-        _test_dilation2d('dil2d', [1, 5, 5, 3], [1, 3, 3, 3], [1, 1, 1, 1], [1, 1, 1, 1], "VALID")
-        _test_dilation2d('dil2d', [1, 5, 5, 3], [1, 3, 3, 3], [1, 1, 1, 1], [1, 2, 2, 1], "VALID")
-        _test_dilation2d('dil2d', [1, 5, 5, 3], [1, 3, 3, 3], [1, 1, 1, 1], [1, 1, 1, 1], "SAME")
-        _test_dilation2d('dil2d', [1, 28, 28, 3], [1, 5, 5, 3], [1, 2, 2, 1], [1, 1, 1, 1], "VALID")
-#######################################################################
 # Main
 # ----
 if __name__ == '__main__':
@@ -2964,6 +2943,7 @@ if __name__ == '__main__':
     test_forward_negative()
     test_forward_divide()
     test_forward_abs()
+    test_forward_isfinite()
     test_forward_softplus()
     test_forward_sqrt()
     test_forward_rsqrt()

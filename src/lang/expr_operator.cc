@@ -78,6 +78,38 @@ void BinaryOpMatchTypes(Expr& lhs, Expr& rhs) {  // NOLINT(*)
   }
 }
 
+// Inifinity value for data type
+Expr infinity(const DataType& dtype) {
+  using namespace ir;
+  CHECK_EQ(dtype.lanes(), 1);
+  if (dtype.is_int()) {
+    if (dtype.bits() == 64) {
+      return IntImm::make(dtype, std::numeric_limits<int64_t>::infinity());
+    } else if (dtype.bits() < 64) {
+      int64_t val = 1;
+      val = (val << (dtype.bits() - 1)) - 1;
+      return IntImm::make(dtype, val);
+    }
+  } else if (dtype.is_uint()) {
+    if (dtype.bits() == 64) {
+      return UIntImm::make(dtype, std::numeric_limits<uint64_t>::infinity());
+    } else if (dtype.bits() < 64) {
+      uint64_t val = 1;
+      val = (val << static_cast<uint64_t>(dtype.bits())) - 1;
+      return UIntImm::make(dtype, val);
+    }
+  } else if (dtype.is_float()) {
+    if (dtype.bits() == 64) {
+      return FloatImm::make(dtype, std::numeric_limits<double>::infinity());
+    } else if (dtype.bits() == 32) {
+      return FloatImm::make(dtype, std::numeric_limits<float>::infinity());
+    } else if (dtype.bits() == 16) {
+      return FloatImm::make(dtype, 65504.0);
+    }
+  }
+  LOG(FATAL) << "Cannot decide infinity for type" << dtype;
+  return Expr();
+}
 
 // maximum and min limits
 Expr max_value(const DataType& dtype) {
@@ -526,11 +558,6 @@ Expr isnan(Expr x) {
   }
 }
 
-Expr isfinite(Expr x) {
-    Expr infX = x.type().infinity();
-    return abs(x) != infX && x == x;
-}
-
 Expr sum(Expr source, Array<IterVar> rdom) {
   Var x("x", source.dtype()), y("y", source.dtype());
   Expr result = ir::Add::make(x, y);
@@ -629,6 +656,11 @@ Expr trunc(Expr x) {
                                      std::floor(fx->value)));
   }
   return ir::Call::make(x.dtype(), "trunc", {x}, ir::Call::PureIntrinsic);
+}
+
+Expr isfinite(Expr x) {
+    Expr infX = infinity(x.dtype());
+    return abs(x) != infX && x == x;
 }
 
 }  // namespace tvm

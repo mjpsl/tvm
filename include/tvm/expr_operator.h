@@ -146,6 +146,8 @@ inline bool is_const(const Expr& x);
  */
 TVM_DLL Expr max_value(const DataType& dtype);
 
+/*! \return the infinity in this format. */
+TVM_DLL Expr infinity(const DataType& dtype);
 /*!
  * Query the minimum possible value of dtype.
  * \param dtype The data type.
