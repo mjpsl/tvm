@@ -215,7 +215,7 @@ class DataType {
     }
   }
 
-private:
+ private:
   DLDataType data_;
 };
 
