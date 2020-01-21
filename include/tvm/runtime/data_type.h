@@ -214,7 +214,6 @@ class DataType {
       return DataType::UInt(sizeof(tvm_index_t) * 8);
     }
   }
-  
  private:
   DLDataType data_;
 };
