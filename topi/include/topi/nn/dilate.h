@@ -100,6 +100,7 @@ inline Tensor dilate(const Tensor& x,
       return x(index_tuple);
     }, name, tag);
 }
+
 }  // namespace nn
 }  // namespace topi
 #endif  // TOPI_NN_DILATE_H_

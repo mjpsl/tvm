@@ -2878,11 +2878,11 @@ def test_forward_add_n():
     _test_forward_add_n(in4)
     _test_forward_add_n(in5)
 
+
 #######################################################################
 # Main
 # ----
 if __name__ == '__main__':
-
     # Transforms
     test_forward_slice()
     test_forward_transpose()
@@ -2995,4 +2995,3 @@ if __name__ == '__main__':
     test_forward_where()
     test_forward_matmul()
     test_forward_batch_matmul()
-
