@@ -2215,19 +2215,6 @@ def test_forward_lrn():
     _test_lrn((1, 3, 20, 20), 3, 1, 1.0, 1.0, 0.5)
 
 #######################################################################
-# isfinite
-# ------------
-
-
-def test_forward_isfinite():
-    """test operator Isfinite"""
-    np_data = np.random.uniform(1, 100, size=(9, 11)).astype(np.float32)
-    tf.reset_default_graph()
-    in_data = tf.placeholder(tf.float32, (9, 11), name="in_data")
-    tf.math.is_finite(in_data, name="isfinite")
-    compare_tf_with_tvm([np_data], ['in_data:0'], 'isfinite:0')
-
-#######################################################################
 # l2_normalize
 # ------------
 
@@ -2411,6 +2398,11 @@ def test_forward_abs():
     in_data = tf.placeholder(tf.float32, (9, 11), name="in_data")
     tf.math.abs(in_data, name="abs")
     compare_tf_with_tvm([np_data], ['in_data:0'], 'abs:0')
+
+#######################################################################
+# isfinite
+# ------------
+
 
 def test_forward_isfinite():
     """test operator Isfinite"""
@@ -2887,6 +2879,7 @@ def test_forward_add_n():
     _test_forward_add_n(in4)
     _test_forward_add_n(in5)
 
+#######################################################################
 # Main
 # ----
 if __name__ == '__main__':
