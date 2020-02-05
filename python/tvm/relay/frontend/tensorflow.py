@@ -425,123 +425,6 @@ def _conv(opname):
         return out
     return _impl
 
-def _dilation2d(name):
-    def _impl(inputs, attr, params):
-
-        flip_layout = False
-
-        input_shape = attr['_input_shapes'][inputs[0]]
-
-        # if attr['_target_layout'] == "NCDHW" and attr['data_format'] == "NDHWC":
-        #     tmp_shape = attr['_input_shapes'][inputs[0]]
-        #     input_shape = [tmp_shape[ii] for ii in (0, 4, 1, 2, 3)]
-        #     inputs[0] = _op.transpose(inputs[0], axes=(0, 4, 1, 2, 3))
-        #     attr['data_format'] = "NCDHW"
-        #     flip_layout = True
-
-        # Fix padding
-        attr['padding'] = attr['padding'].decode("utf-8")
-
-        if attr['padding'] == 'VALID':
-            attr['padding'] = [0, 0]
-        elif attr['padding'] == 'SAME':
-            stride_h, stride_w = attr['strides']
-            kernel_h, kernel_w, kernel_c = attr['kernel_shape']
-            if attr['data_format'] == 'NHWC':
-                in_h = input_shape[1]
-                in_w = input_shape[2]
-                in_c = input_shape[3]
-
-            #pad_d = _get_pad_pair(in_d, kernel_d, stride_d)
-            pad_v = _get_pad_pair(in_h, kernel_h, stride_h)
-            pad_h = _get_pad_pair(in_w, kernel_w, stride_w)
-
-            attr['padding'] = [pad_v[0], pad_h[0], pad_v[1], pad_h[1]]
-        else:
-            msg = 'Value {} in attribute "padding" of operator Dilation is ' \
-                  'not valid.'
-            raise tvm.error.OpAttributeInvalid(msg.format(attr['padding']))
-        if 'rates' in attr:
-            attr['rates'] = (attr['rates'][1], attr['rates'][2])
-        attr['strides'] = (attr['strides'][1], attr['strides'][2])
-
-        out = AttrCvt(
-            op_name=_dimension_picker3d(name),
-            transforms={
-                'kernel_shape': 'pool_size',
-                'data_format': 'layout'},
-            ignores=['ksize'],
-            extras={'ceil_mode': False},
-            custom_check=_dimension_constraint3d())(inputs, attr)
-
-        return out
-    return _impl
-
-
-def _dilation2D():  # Following the maxpool3d
-    def _impl(inputs, attr, params):
-
-        attr['data_format'] = attr['data_format'].decode("utf-8")
-        flip_layout = False
-
-        input_shape = attr['_input_shapes'][inputs[0]]
-
-        attr['kernel_shape'] = (attr['ksize'][1], attr['ksize'][2], attr['ksize'][3])
-        attr['strides'] = (attr['strides'][1], attr['strides'][2])
-
-
-        #if attr['_target_layout'] == "NCDHW" and attr['data_format'] == "NDHWC":
-        tmp_shape = attr['_input_shapes'][inputs[0]]
-        input_shape = [tmp_shape[ii] for ii in (0, 1, 2, 3)]
-        inputs[0] = _op.transpose(inputs[0], axes=(0, 4, 1, 2, 3))
-        attr['data_format'] = "NHWC"
-
-        # Fix padding
-        attr['padding'] = attr['padding'].decode("utf-8")
-
-        if attr['padding'] == 'VALID':
-            attr['padding'] = [0, 0]
-        elif attr['padding'] == 'SAME':
-            stride_h, stride_w = attr['strides']
-            kernel_h, kernel_w, kernel_c = attr['kernel_shape']
-            if attr['data_format'] == 'NHWC':
-
-                in_h = input_shape[1]
-                in_w = input_shape[2]
-                in_c = input_shape[3]
-            else:
-                in_d = input_shape[2]
-                in_h = input_shape[3]
-                in_w = input_shape[4]
-
-            pad_d = _get_pad_pair(in_d, kernel_d, stride_d)
-            pad_v = _get_pad_pair(in_h, kernel_h, stride_h)
-            pad_h = _get_pad_pair(in_w, kernel_w, stride_w)
-
-            attr['padding'] = [pad_d[0], pad_v[0], pad_h[0], pad_d[1], pad_v[1], pad_h[1]]
-        else:
-            msg = 'Value {} in attribute "padding" of operator Pooling is ' \
-                  'not valid.'
-            raise tvm.error.OpAttributeInvalid(msg.format(attr['padding']))
-
-        #Avg Pooling3d not supported currently
-        #if name == "avg_pool":
-        #    attr['count_include_pad'] = False
-
-        out = AttrCvt(
-            op_name=_dimension_picker3d(name),
-            transforms={
-                'kernel_shape':'pool_size',
-                'data_format':'layout'},
-            ignores=['ksize'],
-            extras={'ceil_mode': False},
-            custom_check=_dimension_constraint3d())(inputs, attr)
-
-        if flip_layout:
-            out = _op.transpose(out, axes=(0, 2, 3, 4, 1))
-
-        return out
-    return _impl
 
 def _decode_image():
     def _impl(inputs, attr, params):
@@ -1565,7 +1448,6 @@ _convert_map = {
     'DecodeJpeg'                        : _decode_image(),
     'DepthwiseConv2dNative'             : _conv('depthwise'),
     'DepthToSpace'                      : _depth_to_space(),
-    'Dilation2D'                        : _dilation2d('dilation2d'),
     'Equal'                             : _broadcast('equal'),
     'Elu'                               : _elu(),
     'Erf'                               : AttrCvt('erf'),
