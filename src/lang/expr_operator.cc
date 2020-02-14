@@ -107,7 +107,7 @@ Expr infinity(const DataType& dtype) {
       return FloatImm::make(dtype, 65504.0);
     }
   }
-  LOG(FATAL) << "Cannot decide infinity for type" << dtype;
+  LOG(FATAL) << "Cannot decide infinity for type:" << dtype;
   return Expr();
 }
 
